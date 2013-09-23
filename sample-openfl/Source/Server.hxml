@@ -1,0 +1,6 @@
+-main Server.hx
+-cpp D:\prog\#BUILDS\ECSCPP
+-debug
+-cmd echo test
+
+# -cmd "D:\prog\#BUILDS\ECSCPP\Server-debug.exe"
