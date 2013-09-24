@@ -36,14 +36,15 @@ class ClientManager
 
 		if(msgType == CONST.CREATE)
 		{
-			var entityType = ba.readShort();
+			var entityTypeId = ba.readShort();
 			var entityUUID = ba.readShort();
 			trace("create entity uuid " + entityUUID);
 
-			var entity = enh.ec.entityFunctionsMap[entityType]();
+			var entityTypeName = ec.entityTypeNameById[entityTypeId];
+			var entity = enh.ec.functionByEntityType[entityTypeName]();
 			trace("entity created " + entity);
 
-			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.CREATE][entityType];
+			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.CREATE][entityTypeId];
 
 			for(compId in ecm)
 			{
@@ -57,13 +58,13 @@ class ClientManager
 
 		if(msgType == CONST.UPDATE)
 		{
-			var entityType = ba.readShort();
+			var entityTypeId = ba.readShort();
 			var entityUUID = ba.readShort();
 			var entity = entitiesById[entityUUID];
 			trace("update entity uuid " + entityUUID);
 			trace("entity update " + entity);
 
-			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.UPDATE][entityType];
+			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.UPDATE][entityTypeId];
 
 			for(compId in ecm)
 			{
@@ -82,11 +83,11 @@ class ClientManager
 
 		if(msgType == CONST.SYNC)
 		{
-			var entityType = ba.readShort();
+			var entityTypeId = ba.readShort();
 			var entityUUID = ba.readShort();
 			var entity = entitiesById[entityUUID];
 
-			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.SYNC][entityType];
+			var ecm:Array<Int> = enh.ec.entityComponentsMap[CONST.SYNC][entityTypeId];
 
 			for(compId in ecm)
 			{

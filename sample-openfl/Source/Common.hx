@@ -44,10 +44,9 @@ class CConnexion extends Component
 // @:autoBuild(enh.macros.MacroTest.buildComponent())
 // class NetComponent extends Component {}
 
-@networked
+@networked @sync
 class CComponent1 extends Component
 {
-	@sync
 	public static var l = [1, 2, 3];
 	@create @update @short public var x:Int;
 	@create @update @short public var y:Int;
@@ -77,11 +76,11 @@ class EntityCreator extends EntityCreatowr
 {
 	public function new() {
 		super();
-		trace("entityfunci " + entityFunctionsMap);
+		// trace("entityfunci " + entityFunctionsMap);
 	}
 
 	@freeze
-	public function createPlayer():String
+	public function player():String
 	{
 		trace("createPlayer");
 		var k = 5;
@@ -102,7 +101,7 @@ class EntityCreator extends EntityCreatowr
 	}
 
 	@freeze
-	public function createFucker():String
+	public function fucker():String
 	{
 		trace("createFucker");
 		var k = 5;

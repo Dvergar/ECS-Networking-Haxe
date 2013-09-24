@@ -18,24 +18,28 @@ class Component
 }
 
 
-interface IEntityCreator
-{
-	// public var entityFunctionsMap:Array<Void->String>;
-	// public var entityComponentsMap:Array<Array<Array<Int>>>;
+// interface IEntityCreator
+// {
+// 	// public var entityFunctionsMap:Array<Void->String>;
+// 	// public var entityComponentsMap:Array<Array<Array<Int>>>;
 
-    public function serializeCreate(componentType:Int,entity:String,ba:ByteArray):Void;
-    public function serializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void;
-    public function serializeDelete(componentType:Int,entity:String,ba:ByteArray):Void;
-    public function unserializeCreate(componentType:Int,entity:String,ba:ByteArray):Void;
-    public function unserializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void;
-    public function unserializeDelete(componentType:Int,entity:String,ba:ByteArray):Void;
-}
+//     public function serializeCreate(componentType:Int,entity:String,ba:ByteArray):Void;
+//     public function serializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void;
+//     public function serializeDelete(componentType:Int,entity:String,ba:ByteArray):Void;
+//     public function unserializeCreate(componentType:Int,entity:String,ba:ByteArray):Void;
+//     public function unserializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void;
+//     public function unserializeDelete(componentType:Int,entity:String,ba:ByteArray):Void;
+// }
 
-class EntityCreatowr implements IEntityCreator
+// @:autobuild(enh.macros.MacroTest.buildMap())
+class EntityCreatowr
 {
-	public var entityFunctionsMap:Array<Void->String>;
+    public var entityTypeIdByEntityTypeName:Map<String, Int>;
+    public var entityTypeNameById:Map<Int, String>;
+	public var functionByEntityType:Map<String, Void->String>;
 	public var entityComponentsMap:Array<Array<Array<Int>>>;
 	public var networkComponents:Array<Component>;
+    // public var componentIdBy
 	public var em:EntityManager;
 
     public function serializeCreate(componentType:Int,entity:String,ba:ByteArray):Void {
@@ -131,6 +135,7 @@ class Enh
 
 		#if server
 		serverManager = new ServerManager(this);
+        net = serverManager;
 		#end
 	}
 
@@ -159,6 +164,7 @@ class Enh
 	#if server
 	public var serverSocket:ServerSocket;
 	public var serverManager:ServerManager;
+    public var net:ServerManager;
 
 	public function startLoop(loopFunc:Void -> Void, rate:Float)
 	{

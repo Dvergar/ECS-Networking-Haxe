@@ -29,12 +29,14 @@ class CConnexion extends Component
 
 
 
+
 @:build(enh.macros.RPCMacro.addRpcUnserializeMethod())
 class ServerManager
 {
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
+    private var entityTypeIdByEntity:Map<String, Int>;
     private var entitiesById:Map<Int, String>;
     private var idsByEntity:Map<String, Int>;
     private var ids:IdManager;
@@ -42,13 +44,14 @@ class ServerManager
     public function new(enh:Enh)
     {
     	this.entitiesById = new Map();
+    	this.entityTypeIdByEntity = new Map();
     	this.idsByEntity = new Map();
     	this.ids = new IdManager(500);
         this.enh = enh;
         this.em = enh.em;
         this.ec = enh.ec;
 
-        trace("entityfunci2 " + ec.entityFunctionsMap);
+        trace("functionByEntityType1 " + ec.functionByEntityType);
     }
 
     public function getEntityFromId(id:Int):String
@@ -68,14 +71,16 @@ class ServerManager
         return "";
     }
 
-	public function createNetworkEntity(entityType:Int):String
+	public function createNetworkEntity(entityType:String):String
 	{
-		trace("entityFunctionsMap " + ec.entityFunctionsMap);
-		var entity = ec.entityFunctionsMap[entityType]();
+		trace("functionByEntityType2 " + ec.functionByEntityType);
+		var entity = ec.functionByEntityType[entityType]();
 		// em.addComponent(entity, new CId(42));
 		var uuid = ids.get();
 		entitiesById[uuid] = entity;
 		idsByEntity[entity] = uuid;
+		var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
+		entityTypeIdByEntity[entity] = entityTypeId;
 
 		trace("entity " + entity);
 		trace("create entity uuid " + uuid);
@@ -86,10 +91,10 @@ class ServerManager
 			var output = enh.serverSocket.connectionsOut[socket];
 
 			output.writeByte(CONST.CREATE);
-			output.writeShort(entityType);  // ID
+			output.writeShort(entityTypeId);  // ID
 			output.writeShort(uuid);  // UUID
 
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.CREATE][entityType];
+			var ecm:Array<Int> = ec.entityComponentsMap[CONST.CREATE][entityTypeId];
 
 			for(compId in ecm)
 			{
@@ -101,10 +106,12 @@ class ServerManager
 		return entity;
 	}
 
-	public function updateNetworkEntity(entity:String, entityType:Int)
+	public function updateNetworkEntity(entity:String)
 	{
 		// var entity = getEntityFromId(entityUUID);
 		// var entity = idsByEntity[entityUUID];
+		// var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
+		var entityTypeId = entityTypeIdByEntity[entity];
 		var entityUUID = idsByEntity[entity];
 		trace("upate entity uuid " + entityUUID);
 
@@ -113,10 +120,10 @@ class ServerManager
 			var output = enh.serverSocket.connectionsOut[socket];
 
 			output.writeByte(CONST.UPDATE);
-			output.writeShort(entityType);
+			output.writeShort(entityTypeId);
 			output.writeShort(entityUUID);
 
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.UPDATE][entityType];
+			var ecm:Array<Int> = ec.entityComponentsMap[CONST.UPDATE][entityTypeId];
 
 			for(compId in ecm)
 			{
@@ -126,22 +133,23 @@ class ServerManager
 		}
 	}
 
-	public function syncNetworkEntity(entityUUID:Int, entityType:Int)
+	public function syncNetworkEntity(entityUUID:Int, entityType:String)
 	{
 		// var entity = getEntityFromId(entityUUID);
 		var entity = entitiesById[entityUUID];
+		var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
 
 		for(socket in enh.serverSocket.connectionsOut.keys())
 		{
 			var output = enh.serverSocket.connectionsOut[socket];
 
 			output.writeByte(CONST.SYNC);
-			output.writeShort(entityType);
+			output.writeShort(entityTypeId);
 			output.writeShort(entityUUID);
 
 			trace("k " + output.length);
 
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.SYNC][entityType];
+			var ecm:Array<Int> = ec.entityComponentsMap[CONST.SYNC][entityTypeId];
 
 			for(compId in ecm)
 			{

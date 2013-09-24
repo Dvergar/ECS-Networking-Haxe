@@ -67,7 +67,7 @@ class MacroTest
         // RPC
         fields = RPCMacro._processRPCs(fields);
 
-        // GRAB DATAS AND FEED ARRAYS
+        // GRAB DATAS AND FEED ARRAYS (TODO : pattern matching !!!)
         var entitiesMethodsById = [];  // id, method
         var entitiesComponentMap = [];
 
@@ -240,29 +240,20 @@ class MacroTest
         // fields.push({ kind : FVar(TPath({ name : "Array", pack : [], params : [TPType(TPath({ name : "Array", pack : [], params : [TPType(TPath({ name : "Array", pack : [], params : [TPType(TPath({ name : "Int", pack : [], params : [] }))] }))] }))] }),null), meta : [], name : "entityComponentsMap", doc : null, pos : pos, access : [APublic] });
         // trace("NEWENTITYCOMPONENTSMAP " + newEntityComponentsMap);
 
-        // BUILD ENTITYFUNCTIONSMAP
-        var exprs = [];
-        // var funcMap = [];
+        // BUILD
+        var exprsFunctionByEntityType = [];
+        var exprsEntityTypeIdByEntityTypeName = [];
+        var exprsEntityTypeNameById = [];
         var entityId = 0;
 
         for(fname in entitiesMethodsById)
         {
-            // EXPRESSIONS FOR entityFunctionsMap
-            exprs.push({expr:EConst(CIdent(fname)), pos:pos});
-
-            // CONSTANTS PLAYER, ARROW...
-            var constName = fname.substr(6).toUpperCase();
-            fields.insert(0, {kind:FVar(TPath({ name:"Int", pack:[], params:[] }),{ expr:EConst(CInt(Std.string(entityId))), pos:pos }), meta:[], name:constName, doc:null, pos:pos, access:[AInline,AStatic,APublic]});
+            exprsFunctionByEntityType.push({expr : EBinop(OpArrow,{ expr : EConst(CString(fname)), pos : pos },{ expr : EConst(CIdent(fname)), pos : pos }), pos : pos});
+            exprsEntityTypeIdByEntityTypeName.push({expr : EBinop(OpArrow,{ expr : EConst(CString(fname)), pos : pos },{ expr : EConst(CInt(Std.string(entityId))), pos : pos }), pos : pos});
+            exprsEntityTypeNameById.push({expr : EBinop(OpArrow,{ expr : EConst(CInt(Std.string(entityId))), pos : pos }, { expr : EConst(CString(fname)), pos : pos }), pos : pos});
 
             entityId++;
         }
-
-        // DEFINITION ENTITYFUNCTIONSMAP
-        // fields.push({ kind: FVar(TPath({ name: "Array", pack: [], params: [TPType(TFunction([TPath({ name: "Void", pack: [], params: [] })],TPath({ name: "String", pack: [], params: [] })))] }),null), meta: [], name: "entityFunctionsMap", doc: null, pos:pos, access: [APublic] });
-        
-        //STATIC
-        // var funcArr = { expr:EArrayDecl(exprs), pos:pos };
-        // fields.push({ kind:FVar(null, funcArr), meta:[], name:"entityFunctionsMap", doc:null, pos:pos, access:[AStatic, APublic] });
 
         // DECLARATION ENTITYFUNCTIONSMAP
         for(f in fields)
@@ -274,8 +265,9 @@ class MacroTest
                         switch(fun.expr.expr)
                         {
                             case EBlock(block):
-                                block.insert(0, { expr:EBinop(OpAssign,{expr:EConst(CIdent("entityFunctionsMap")), pos:pos },{ expr:EArrayDecl(exprs), pos:pos }), pos:pos });
-                                // block.insert(0, macro entityComponentsMap = $v{newEntityComponentsMap});
+                                block.insert(0, { expr : EBinop(OpAssign,{ expr : EConst(CIdent("functionByEntityType")), pos : pos },{ expr : EArrayDecl(exprsFunctionByEntityType), pos : pos }), pos : pos });
+                                block.insert(0, { expr : EBinop(OpAssign,{ expr : EConst(CIdent("entityTypeIdByEntityTypeName")), pos : pos },{ expr : EArrayDecl(exprsEntityTypeIdByEntityTypeName), pos : pos }), pos : pos });
+                                block.insert(0, { expr : EBinop(OpAssign,{ expr : EConst(CIdent("entityTypeNameById")), pos : pos },{ expr : EArrayDecl(exprsEntityTypeNameById), pos : pos }), pos : pos });
                             default:
                         }
 
@@ -346,7 +338,7 @@ class MacroTest
         // PRINTER SAMPLE
         for(f in fields)
         {
-            trace("kobo : " + f);
+            // trace("kobo : " + f);
             trace("humpf : " + new haxe.macro.Printer().printField(f));
         }
 
@@ -357,12 +349,16 @@ class MacroTest
 
 
             // BUILD ENTITYCOMPONENTSMAP
+            // var newEntityComponentsMap:Array<Map<String, Array<Int>>> = [new Map(), new Map(), new Map(), new Map()];
             var newEntityComponentsMap = [[], [], [], []];
 
             var entityId = 0;
             for(entity in entitiesComponentMap)
             {
+                // var entityType = entitiesMethodsById[entityId];
                 for(type in newEntityComponentsMap) type.push([]);
+                // for(type in newEntityComponentsMap) type.set(entityType, []);
+
 
                 for(component in entity)
                 {

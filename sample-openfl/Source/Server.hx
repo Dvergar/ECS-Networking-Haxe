@@ -31,15 +31,10 @@ class Server extends Enh
 	public function new()
 	{
 		super(EntityCreator);
-		// this.setRoot(this);
-		// this.ec = new EntityCreator();
-		// this.setEntityCreator(EntityCreator);
 		this.startServer("", 32000);
 
 		@addSystem MovementSystem;
 		movementSystem.hello();
-		// @registerListener "CONNECTION";
-		// @registerListener "DATA";
 		this.em.registerListener("ON_CONNECTION", onConnection);
 		this.em.registerListener("ON_DATA", onData);
 		this.em.registerListener("NET_HELLO", onNetHello);
@@ -57,11 +52,12 @@ class Server extends Enh
 	{
 		trace("onConnect");
 		// @RPC("NET_ACTION_LOL", 50, "hello") {hp:Int, msg:String};
-		var entity = this.serverManager.createNetworkEntity(EntityCreator.PLAYER);
+		var entity = net.createNetworkEntity("player");
 		var c = em.getComponent(entity, CComponent1);
 		c.x = 500;
+		c.y = 42;
 
-		this.serverManager.updateNetworkEntity(entity, EntityCreator.PLAYER);
+		net.updateNetworkEntity(entity);
 
 	}
 
