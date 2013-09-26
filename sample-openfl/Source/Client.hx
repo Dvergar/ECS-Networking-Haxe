@@ -1,7 +1,10 @@
 package;
 
 import flash.display.Sprite;
+import flash.display.DisplayObject;
+import flash.display.DisplayObjectContainer;
 import flash.net.Socket;
+import flash.events.MouseEvent;
 import flash.events.Event;
 import flash.events.IOErrorEvent;
 import flash.events.SecurityErrorEvent;
@@ -15,29 +18,93 @@ import enh.ClientManager;
 import Common;
 
 
+// class CDrawable extends Component
+// {
+// }
+
+
+class CDrawable extends Component
+{
+	public var displayObject:DisplayObject;
+	public var parent:DisplayObjectContainer;
+
+	public function new(displayObject:DisplayObject, ?parent:DisplayObjectContainer)
+	{
+		super();
+		this.displayObject = displayObject;
+
+		if(parent == null) parent = flash.Lib.current.stage;
+		parent.addChild(displayObject);
+
+		this.parent = parent;
+	}
+}
+
+
+class InputSystem extends System<Client>
+{
+	public function init()
+	{
+        
+	}
+
+	public function activate()
+	{
+		flash.Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+	}
+
+    private function onMouseMove(event:MouseEvent)
+    {
+    	// trace(event.stageX);
+    	trace("mouse " + event.stageY + " / " + event.stageX);
+    	// trace("enh " + enh);
+    	@RPC("NET_MOUSE_POSITION", Std.int(event.stageX), Std.int(event.stageY)) {x:Int, y:Int};
+	}
+}
+
+
+class DrawableSystem extends System<Client>
+{
+	public function init()
+	{
+	}
+
+	public function processEntities()
+	{
+		var allDrawables = em.getEntitiesWithComponent(CDrawable);
+		for(entity in allDrawables)
+		{
+			var drawable = em.getComponent(entity, CDrawable);
+			var position = em.getComponent(entity, CPosition);
+
+			drawable.displayObject.x = position.x;
+			drawable.displayObject.y = position.y;
+		}
+	}
+}
+
+
 
 class Client extends Enh {
 	private var cm:ClientManager;
 	private var socket:Socket;
-	private var ba:ByteArray;
 
 	public function new () {
 		super(EntityCreator);
-
-		this.ba = new ByteArray();
-		// this.setRoot(this);
-		// this.setEntityCreator(EntityCreator);
 
 		cm = new ClientManager(this);
 
 		socket = new Socket();
         socket.connect("192.168.1.4", 32000);
-        socket.addEventListener(Event.CONNECT, onConnect);
+        // socket.addEventListener(Event.CONNECT, onConnect);
         socket.addEventListener(ProgressEvent.SOCKET_DATA, onData);
+
+		@addSystem DrawableSystem;
+		@addSystem InputSystem;
 
         @registerListener "NET_ACTION_LOL";
 
-		trace("hello");
+		this.em.registerListener("CONNECTION", onConnection);
 		flash.Lib.current.stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
 	}
 
@@ -47,9 +114,10 @@ class Client extends Enh {
 		trace("onNetActionLol");
 	}
 
-	private function onConnect(ev:Event)
+	private function onConnection(entity:String, ev:Dynamic)
 	{
 		trace("connected");
+		inputSystem.activate();
 		@RPC("NET_HELLO", "Hoy") {msg:String};
 	}
 
@@ -57,48 +125,37 @@ class Client extends Enh {
 	{
 		trace("onData " + socket.bytesAvailable);
 
-		// var ba = new ByteArray();
-		// socket.readShort();
-		// socket.readBytes(ba, 0, socket.bytesAvailable);
-		// cm.readMessageFromTheInternetTub
-		// socket.readShort();
-
-		socket.readBytes(ba, 0, socket.bytesAvailable);
+		socket.readBytes(input, 0, socket.bytesAvailable);
 		
-        while(ba.bytesAvailable > 2)
+        while(input.bytesAvailable > 2)
         {
-        	trace("ba " + ba.bytesAvailable);
+        	trace("output " + input.bytesAvailable);
 
-        	var msgLength = ba.readShort();
+        	var msgLength = input.readShort();
         	trace("msglength " + msgLength);
 
-        	var positionBeforeReading = ba.position;
+        	var positionBeforeReading = input.position;
 
-        	if(ba.bytesAvailable >= msgLength)
+        	if(input.bytesAvailable >= msgLength)
         	{
-        		while(ba.position - positionBeforeReading < msgLength)
+        		while(input.position - positionBeforeReading < msgLength)
         		{
-        			cm.readMessageFromTheInternetTubes(ba);
+        			cm.readMessageFromTheInternetTubes(input);
         		}
         	}
         	else
         	{
-        		ba.position -= 2;
+        		input.position -= 2;
         	}
 
-        	if(ba.bytesAvailable == 0) ba.clear();
+        	if(input.bytesAvailable == 0) input.clear();
         }
-
-        var myplayer = em.getEntitiesWithComponent(CMyPlayer).next();
-		var c = em.getComponent(myplayer, CComponent1);
-		var c2 = em.getComponent(myplayer, CComponent2);
-		trace("unserialized update x" + c.x);
-		trace("unserialized update y" + c.y);
-		trace("unserialized update hp" + c2.hp);
 	}
 
 	private function onEnterFrame(ev:Event)
 	{
+		drawableSystem.processEntities();
+
 		if(socket.connected)
 		{
 			if(this.output.length > 0)

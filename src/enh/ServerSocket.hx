@@ -2,6 +2,23 @@ package enh;
 
 import enh.ByteArray;
 import enh.Builders;
+import enh.Tools;
+
+
+class Connection
+{
+	public var input:ByteArray;
+	public var output:ByteArray;
+	public var id:Int;
+	public var entity:String;
+
+	public function new(id:Int)
+	{
+		this.id = id;
+		this.input = new ByteArray();
+		this.output = new ByteArray();
+	}
+}
 
 
 class ServerSocket
@@ -10,16 +27,16 @@ class ServerSocket
 	private var em:EntityManager;
 	private var serverSocket:sys.net.Socket;
     private var sockets:Array<sys.net.Socket>;
-    public var connectionsIn:Map<sys.net.Socket, ByteArray>;
-    public var connectionsOut:Map<sys.net.Socket, ByteArray>;
+    public var connections:Map<sys.net.Socket, Connection>;
+	private var connectionIds:IdManager;
 
 	public function new(address:String, port:Int, enh:Enh)
 	{
 		this.enh = enh;
 		this.em = enh.em;
 
-		connectionsIn = new Map();
-		connectionsOut = new Map();
+		connectionIds = new IdManager(32);
+		connections = new Map();
 		sockets = new Array();
 
         serverSocket = new sys.net.Socket();
@@ -45,26 +62,25 @@ class ServerSocket
                 newSocket.setBlocking(false);
                 sockets.push(newSocket);
 
-                // newSocket.output.writeByte(5);
+                var connection = new Connection(connectionIds.get());
+                connection.output.writeShort(0);
 
-                connectionsIn[newSocket] = new ByteArray();
-                connectionsOut[newSocket] = new ByteArray();
-                connectionsOut[newSocket].writeShort(0);
-
-                trace("connected : " + socket);
-				em.pushEvent("ON_CONNECTION", "dummy", {});
+                connections[newSocket] = connection;
+				enh.serverManager.onConnect(connection);
             }
 	        else
 	        {
-	        	trace("SOMETHING HAPPENED");
-	        	var ba = connectionsIn[socket];
-	        	var pos = ba.position;
+	        	// trace("SOMETHING HAPPENED");
+	        	var conn = connections[socket];
+	        	var input = conn.input;
+	        	var pos = input.position;
+
 	            try
 	            {
 		        	while(true)
 		        	{
 		        		var byte = socket.input.readByte();
-		        		ba.writeByte(byte);
+		        		input.writeByte(byte);
 		        	}
 		        }
 	            catch(ex:haxe.io.Eof)
@@ -73,51 +89,54 @@ class ServerSocket
 	            }
 	            catch(ex:haxe.io.Error)
                 {
-                	trace("io error");
+                	// trace("io error");
                     if(ex == haxe.io.Error.Blocked)
                     {
-                		trace("BLOCKED");
+                		// trace("BLOCKED");
                     }
                 }
-                trace("input bytesAvailable " + ba.bytesAvailable);
-                ba.position = pos;
-	            while(ba.bytesAvailable > 2)
-	            {
-	            	var msgLength = ba.readShort();
-	            	if(ba.bytesAvailable >= msgLength)
-	            	{
-	            		enh.serverManager.processDatas(ba);
-	            	}
-	            	else
-	            	{
-	            		ba.position -= 2;
-	            	}
-	            }
 
-	            if(ba.bytesAvailable == 0) ba.clear();  // May be risky
+                input.position = pos;
 
-	            em.pushEvent("ON_DATA", "dummy", {ba:ba});
+				while(input.bytesAvailable > 2)
+				{
+					var msgLength = input.readShort();
+					if(input.bytesAvailable < msgLength) break;
+
+					var msgPos = input.position;
+					while(input.position - msgPos < msgLength)
+					{
+	            		enh.serverManager.processDatas(conn);
+					}
+				}
+
+	            if(input.bytesAvailable == 0) input.clear();  // May be risky
 	        }
         }
     }
 
 	public function pumpOut():Void
 	{
-		for(socket in connectionsOut.keys())
+		for(socket in connections.keys())
 		{
-			var ba = connectionsOut[socket];
-			if(ba.length > 2)
+			var conn = connections[socket];
+			// trace("output socket " + conn.output.length);
+			var output = conn.output;
+
+			if(output.length > 2)
 			{
-				trace("BABA " + ba.length);
-				trace("out " + ba.length);
+				// trace("BABA " + ba.length);
+				// trace("out " + ba.length);
 
-				ba.position = 0;
-				ba.writeShort(ba.length - 2);
-				socket.output.write(ba);
+				output.position = 0;
+				output.writeShort(output.length - 2);
+				socket.output.write(output);
 
-				ba.clear();
-				ba.writeShort(0);
+				output.clear();
+				output.writeShort(0);
 			}
 		}
+
+		enh.serverManager.pumpSyncedEntities();
 	}
 }

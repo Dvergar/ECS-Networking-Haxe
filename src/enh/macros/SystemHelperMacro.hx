@@ -34,7 +34,7 @@ class SystemHelperMacro
 		fields.insert(0, { kind : FVar(TPath({ name : systemClassName, pack : [], params : [] }),null), meta : [], name : systemInstanceName, doc : null, pos : pos, access : [APublic] });
 
 		// REPLACE META
-		var addSystemExpr = macro var $systemInstanceName = this.addSystem($i{systemClassName});
+		var addSystemExpr = macro this.$systemInstanceName = this.addSystem($i{systemClassName});
 		meta.expr = addSystemExpr.expr;
 
         return fields;

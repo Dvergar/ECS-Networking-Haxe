@@ -3,72 +3,68 @@ import enh.Builders;
 
 #if (flash || openfl)
 import flash.utils.ByteArray;
+import flash.display.Shape;
+import Client;
 #else
 import enh.ByteArray;
 #end
 
+// class CMyPlayer extends Component
+// {
+//     public function new()
+//     {
+//         super();
+//     }
+// }
 
 
-class CMyPlayer extends Component
-{
-    public function new()
-    {
-        super();
-    }
-}
+// class CId extends Component
+// {
+//     public var value:Int;
+//     public function new(value:Int)
+//     {
+//         super();
+//         this.value = value;
+//     }
+// }
+
+
+// class CConnexion extends Component
+// {
+//     public var bytes:ByteArray;
+// 	public function new()
+// 	{
+// 		super();
+// 		this.bytes = new ByteArray();
+// 	}
+// }
 
 
 
-class CId extends Component
-{
-    public var value:Int;
-    public function new(value:Int)
-    {
-        super();
-        this.value = value;
-    }
-}
-
-
-class CConnexion extends Component
-{
-    public var bytes:ByteArray;
-	public function new()
-	{
-		super();
-		this.bytes = new ByteArray();
-	}
-}
-
-
-// @:autoBuild(enh.macros.MacroTest.buildComponent())
-// class NetComponent extends Component {}
 
 @networked @sync
-class CComponent1 extends Component
+class CPosition extends Component
 {
-	public static var l = [1, 2, 3];
-	@create @update @short public var x:Int;
-	@create @update @short public var y:Int;
+	@short public var x:Int;
+	@short public var y:Int;
 
-	public function new()
+	public function new(x:Int, y:Int)
 	{
 		super();
+		this.x = x;
+		this.y = y;
 	}
 }
 
+
 @networked
-class CComponent2 extends Component
+class CComponentTest extends Component
 {
-	@create @update @short public var hp:Int;
+	@short public var hp:Int;
 
 	public function new() {super();}
 }
 
-class CComponent3 extends Component
-{
-	public function new() {super();}
-}
 
 
 @:build(enh.macros.MacroTest.buildMap())
@@ -76,25 +72,24 @@ class EntityCreator extends EntityCreatowr
 {
 	public function new() {
 		super();
-		// trace("entityfunci " + entityFunctionsMap);
 	}
 
 	@freeze
-	public function player():String
+	public function mouse():String
 	{
-		trace("createPlayer");
-		var k = 5;
+		trace("mouse");
 		var player = em.createEntity();
-		em.addComponent(player, new CComponent1());
-		var i = 12;
-		em.addComponent(player, new CComponent2());
-
-		#if server
-		em.addComponent(player, new CConnexion());
-		#end
+		em.addComponent(player, new CPosition(100, 100));
+		em.addComponent(player, new CComponentTest());
 
 		#if client
-		em.addComponent(player, new CMyPlayer());
+		var shape = new Shape();
+        shape.graphics.beginFill(0x3FBF2E);
+        shape.graphics.drawRect(0, 0, 100, 100);
+        shape.graphics.endFill();
+
+		em.addComponent(player, new CDrawable(shape));
+		// em.addComponent(player, new CDrawable());
 		#end
 
 		return player;
@@ -104,12 +99,10 @@ class EntityCreator extends EntityCreatowr
 	public function fucker():String
 	{
 		trace("createFucker");
-		var k = 5;
 		var fucker = em.createEntity();
-		em.addComponent(fucker, new CComponent3());
-		var i = 12;
-		em.addComponent(fucker, new CComponent2());
-		em.removeComponentOfType(fucker, CComponent2);
+		// em.addComponent(fucker, new CComponent3());
+		// em.addComponent(fucker, new CComponent2());
+		// em.removeComponentOfType(fucker, CComponent2);
 
 		return fucker;
 	}

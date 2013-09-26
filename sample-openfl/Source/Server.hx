@@ -4,24 +4,21 @@ import enh.Builders;
 import Common;
 
 
-class MovementSystem extends System<Server>
+class MouseMovementSystem extends System<Server>
 {
 	public function init()
 	{
-		@registerListener "UPDATE_PLAYER";
-		em.pushEvent("UPDATE_PLAYER", "dummy", {future:42});
+		@registerListener "NET_MOUSE_POSITION";
+		// em.pushEvent("UPDATE_PLAYER", "dummy", {future:42});
 	}
 
-	public function hello()
+	@x('Int') @y('Int')
+	public function onNetMousePosition(entity:String, event:Dynamic)
 	{
-		trace("hello");
-	}
-
-	@future('Int')
-	public function onUpdatePlayer(entity:String, event:Dynamic)
-	{
-		trace("onUpdatePlayer");
-		trace("event " + event.future);
+		// trace("onNetMousePosition " + entity);
+		var pos = em.getComponent(entity, CPosition);
+		pos.x = event.x;
+		pos.y = event.y;
 	}
 }
 
@@ -33,10 +30,10 @@ class Server extends Enh
 		super(EntityCreator);
 		this.startServer("", 32000);
 
-		@addSystem MovementSystem;
-		movementSystem.hello();
-		this.em.registerListener("ON_CONNECTION", onConnection);
-		this.em.registerListener("ON_DATA", onData);
+		@addSystem MouseMovementSystem;
+
+		this.em.registerListener("CONNECTION", onConnection);
+		this.em.registerListener("DATA", onData);
 		this.em.registerListener("NET_HELLO", onNetHello);
 
 		this.startLoop(loop, 1/60);
@@ -48,17 +45,17 @@ class Server extends Enh
 		trace("onNetHello");
 	}
 
-	private function onConnection(entity:String, ev:Dynamic)
+	private function onConnection(connectionEntity:String, ev:Dynamic)
 	{
-		trace("onConnect");
-		// @RPC("NET_ACTION_LOL", 50, "hello") {hp:Int, msg:String};
-		var entity = net.createNetworkEntity("player");
-		var c = em.getComponent(entity, CComponent1);
-		c.x = 500;
-		c.y = 42;
+		net.sendWorldState(connectionEntity);
 
-		net.updateNetworkEntity(entity);
+		var mouseEntity = net.createNetworkEntity("mouse", connectionEntity);
+		net.setConnectionEntityFromTo(connectionEntity, mouseEntity);
 
+		trace("onConnection " + connectionEntity);
+		// trace("mousentity " + mouseEntity);
+
+		@RPC("NET_ACTION_LOL", 50, "hello") {hp:Int, msg:String};
 	}
 
 	private function onData(entity:String, ev:Dynamic)

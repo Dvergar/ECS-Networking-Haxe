@@ -6,27 +6,17 @@ import enh.ServerSocket;
 import enh.Tools;
 
 
-class CId extends Component
+class NetEntity
 {
-    public var value:Int;
-    public function new(value:Int)
-    {
-        super();
-        this.value = value;
-    }
+	public var entity:String;
+	public var id:Int;
+	public var typeName:String;
+	public var typeId:Int;
+	public var owner:Null<String>;
+	public var ownerId:Null<Int>;
+
+	public function new(){};
 }
-
-
-class CConnexion extends Component
-{
-    public var bytes:ByteArray;
-	public function new()
-	{
-		super();
-		this.bytes = new ByteArray();
-	}
-}
-
 
 
 
@@ -36,17 +26,20 @@ class ServerManager
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
-    private var entityTypeIdByEntity:Map<String, Int>;
-    private var entitiesById:Map<Int, String>;
-    private var idsByEntity:Map<String, Int>;
     private var ids:IdManager;
+    private var netEntityByEntity:Map<String, NetEntity>;
+    private var syncingEntities:Array<NetEntity>;
+    private var entityIdByConnectionEntity:Map<String, Int>;
+    private var connectionsByEntity:Map<String, Connection>;
 
     public function new(enh:Enh)
     {
-    	this.entitiesById = new Map();
-    	this.entityTypeIdByEntity = new Map();
-    	this.idsByEntity = new Map();
+    	this.connectionsByEntity = new Map();
+    	this.netEntityByEntity = new Map();
+    	this.entityIdByConnectionEntity = new Map();
+    	this.syncingEntities = new Array();
     	this.ids = new IdManager(500);
+
         this.enh = enh;
         this.em = enh.em;
         this.ec = enh.ec;
@@ -54,131 +47,163 @@ class ServerManager
         trace("functionByEntityType1 " + ec.functionByEntityType);
     }
 
-    public function getEntityFromId(id:Int):String
+    public function sendWorldState(connectionEntity:String)
     {
-        var allIds = em.getEntitiesWithComponent(CId);
+    	var conn = connectionsByEntity[connectionEntity];
 
-        for(idEntity in allIds)
-        {
-            var itId = em.getComponent(idEntity, CId).value;
-
-            if(itId == id)
-            {
-                return idEntity;
-            }
-        }
-        throw "No entity was found";
-        return "";
+    	for(netEntity in netEntityByEntity.iterator())
+    	{
+    		sendCreate(netEntity, conn.output);
+    	}
     }
 
-	public function createNetworkEntity(entityType:String):String
+	public function setConnectionEntityFromTo(connectionEntity:String,
+											  newConnectionEntity:String)
 	{
-		trace("functionByEntityType2 " + ec.functionByEntityType);
-		var entity = ec.functionByEntityType[entityType]();
-		// em.addComponent(entity, new CId(42));
-		var uuid = ids.get();
-		entitiesById[uuid] = entity;
-		idsByEntity[entity] = uuid;
+		var conn = connectionsByEntity[connectionEntity];
+		conn.entity = newConnectionEntity;
+
+		connectionsByEntity.remove(connectionEntity);
+		connectionsByEntity[newConnectionEntity] = conn;
+	}
+
+    public function onConnect(conn:Connection)
+    {
+		conn.output.writeByte(CONST.CONNECTION);
+		conn.output.writeShort(conn.id);
+
+    	trace("SOCKET : onConnect " + conn.entity);
+    }
+
+	public function createNetworkEntity(entityType:String, ?owner:String):String
+	{
 		var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
-		entityTypeIdByEntity[entity] = entityTypeId;
+		var entity = ec.functionByEntityType[entityType]();
+		var conn = connectionsByEntity[owner];
 
-		trace("entity " + entity);
-		trace("create entity uuid " + uuid);
-		trace("entityComponentsMap " + ec.entityComponentsMap);
+		var netEntity = new NetEntity();
+		netEntity.entity = entity;
+		netEntity.id = ids.get();
+		netEntity.typeName = entityType;
+		netEntity.typeId = entityTypeId;
+		netEntity.owner = owner;
+		netEntity.ownerId = conn.id;
 
-		for(socket in enh.serverSocket.connectionsOut.keys())
+		netEntityByEntity[entity] = netEntity;
+
+		if(owner != null && netEntity.ownerId == null)
 		{
-			var output = enh.serverSocket.connectionsOut[socket];
-
-			output.writeByte(CONST.CREATE);
-			output.writeShort(entityTypeId);  // ID
-			output.writeShort(uuid);  // UUID
-
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.CREATE][entityTypeId];
-
-			for(compId in ecm)
-			{
-				trace("plop");
-				ec.serializeCreate(compId, entity, output);
-			}
+			throw("Owner can only be a connection entity");
 		}
+		else
+		{
+			em.addComponent(entity, new CNetOwner(netEntity.ownerId));
+		}
+
+		for(conn in connectionsByEntity)
+		{
+			sendCreate(netEntity, conn.output);
+		}
+
+		if(ec.syncedEntities[entityTypeId]) syncingEntities.push(netEntity);
 
 		return entity;
 	}
 
+	private function sendCreate(netEntity:NetEntity, output:ByteArray)
+	{
+		if(netEntity.ownerId != null)
+		{
+			output.writeByte(CONST.CREATE_OWNED);
+			output.writeByte(netEntity.ownerId);
+		}
+		else
+		{
+			output.writeByte(CONST.CREATE);
+		}
+
+		output.writeShort(netEntity.typeId);
+		output.writeShort(netEntity.id);
+
+		for(compId in ec.componentsNameByEntityId[netEntity.typeId])
+		{
+			ec.serializeCreate(compId, netEntity.entity, output);
+		}
+	}
+
 	public function updateNetworkEntity(entity:String)
 	{
-		// var entity = getEntityFromId(entityUUID);
-		// var entity = idsByEntity[entityUUID];
-		// var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
-		var entityTypeId = entityTypeIdByEntity[entity];
-		var entityUUID = idsByEntity[entity];
-		trace("upate entity uuid " + entityUUID);
+		var netEntity = netEntityByEntity[entity];
 
-		for(socket in enh.serverSocket.connectionsOut.keys())
+		for(conn in connectionsByEntity)
 		{
-			var output = enh.serverSocket.connectionsOut[socket];
+			var output = conn.output;
 
 			output.writeByte(CONST.UPDATE);
-			output.writeShort(entityTypeId);
-			output.writeShort(entityUUID);
+			output.writeShort(netEntity.typeId);
+			output.writeShort(netEntity.id);
 
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.UPDATE][entityTypeId];
-
-			for(compId in ecm)
+			for(compId in ec.componentsNameByEntityId[netEntity.typeId])
 			{
 				trace("comp update id " + compId);
-				ec.serializeUpdate(compId, entity, output);
+				ec.serializeUpdate(compId, netEntity.entity, output);
 			}
 		}
 	}
 
-	public function syncNetworkEntity(entityUUID:Int, entityType:String)
+	public function syncNetworkEntity(netEntity:NetEntity)
 	{
-		// var entity = getEntityFromId(entityUUID);
-		var entity = entitiesById[entityUUID];
-		var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
-
-		for(socket in enh.serverSocket.connectionsOut.keys())
+		for(conn in connectionsByEntity)
 		{
-			var output = enh.serverSocket.connectionsOut[socket];
+			var output = conn.output;
 
 			output.writeByte(CONST.SYNC);
-			output.writeShort(entityTypeId);
-			output.writeShort(entityUUID);
+			output.writeShort(netEntity.typeId);
+			output.writeShort(netEntity.id);
 
-			trace("k " + output.length);
-
-			var ecm:Array<Int> = ec.entityComponentsMap[CONST.SYNC][entityTypeId];
-
-			for(compId in ecm)
+			for(compId in ec.componentsNameByEntityId[netEntity.typeId])
 			{
-				trace("boop");
-				ec.serializeUpdate(compId, entity, output);			
+				ec.serializeUpdate(compId, netEntity.entity, output);			
 			}
 		}
 	}
 
 	public function deleteNetworkEntity(entityUUID:Int)
 	{
-		enh.output.writeByte(CONST.DELETE);
-		enh.output.writeShort(entityUUID);
+		// enh.output.writeByte(CONST.DELETE);
+		// enh.output.writeShort(entityUUID);
 
-		// var entity = getEntityFromId(entityUUID);
-		var entity = entitiesById[entityUUID];
-		em.killEntity(entity);
-		entitiesById.remove(entityUUID);
-		idsByEntity.remove(entity);
+		// // var entity = getEntityFromId(entityUUID);
+		// var entity = entitiesById[entityUUID];
+		// em.killEntity(entity);
+		// entitiesById.remove(entityUUID);
+		// idsByEntity.remove(entity);
 	}
 
-	public function processDatas(ba:ByteArray)
+	public function processDatas(conn:Connection)
 	{
-		trace("processDatas");
-		var msgType = ba.readByte();
+		var msgType = conn.input.readByte();
+
+		if(msgType == CONST.CONNECTION)
+		{
+	    	var entity = em.createEntity();
+	    	conn.entity = entity;
+	    	connectionsByEntity[entity] = conn;
+
+			em.pushEvent("CONNECTION", conn.entity, {});
+		}
 
 		if(msgType == CONST.RPC)
 		{
-			unserializeRpc(ba);
+			unserializeRpc(conn.input, conn.entity);
+		}
+	}
+
+	public function pumpSyncedEntities()
+	{
+		for(entityUUID in syncingEntities)
+		{
+			syncNetworkEntity(entityUUID);
 		}
 	}
 }
