@@ -1,13 +1,14 @@
 package enh;
-#if (cpp || neko)
+#if(flash || openfl)
+typedef ByteArray = flash.utils.ByteArray;
+#end
 
+// import flash.errors.EOFError;
+// import flash.utils.CompressionAlgorithm;
+// import flash.Lib;
+// import openfl.utils.IMemoryRange;
 
-import haxe.io.Bytes;
-import haxe.io.BytesData;
-// import native.errors.EOFError; // Ensure that the neko->haxe callbacks are initialized
-// import native.utils.CompressionAlgorithm;
-// import native.Loader;
-
+#if(!flash || !openfl)
 #if neko
 import neko.Lib;
 import neko.zip.Compress;
@@ -20,6 +21,8 @@ import cpp.zip.Uncompress;
 import cpp.zip.Flush;
 #end
 
+import haxe.io.Bytes;
+import haxe.io.BytesData;
 
 class Endian {
 	public static inline var BIG_ENDIAN : String = "bigEndian";
@@ -27,34 +30,46 @@ class Endian {
 }
 
 
-class ByteArray extends Bytes {
+// @:autoBuild(openfl.Assets.embedFile())
+class ByteArray extends Bytes implements ArrayAccess<Int> {
+	
+
 	public var bigEndian:Bool;
-	public var bytesAvailable(get_bytesAvailable, null):Int;
-	public var endian(get_endian, set_endian):String;
+	public var bytesAvailable (get, null):Int;
+	public var endian (get, set):String;
 	public var position:Int;
-	public var byteLength(get_byteLength,null):Int;
+	public var byteLength (get, null):Int;
 	
 	#if neko
-	/** @private */ private var alloced:Int;
+	private var allocated:Int;
 	#end
 	
 	
-	public function new(inSize = 0) {
+	public function new (size = 0) {
 		
 		bigEndian = true;
 		position = 0;
 		
-		if (inSize >= 0) {
+		if (size >= 0) {
 			
 			#if neko
-			alloced = inSize < 16 ? 16 : inSize;
-			var bytes = untyped __dollar__smake(alloced);
-			super(inSize, bytes);
+			
+			allocated = size < 16 ? 16 : size;
+			var bytes = untyped __dollar__smake (allocated);
+			super (size, bytes);
+			
 			#else
-			var data = new BytesData();
-			if (inSize > 0)
-				untyped data[inSize - 1] = 0;
-			super(inSize, data);
+			
+			var data = new BytesData ();
+			
+			if (size > 0) {
+				
+				untyped data[size - 1] = 0;
+				
+			}
+			
+			super (size, data);
+			
 			#end
 			
 		}
@@ -62,69 +77,25 @@ class ByteArray extends Bytes {
 	}
 	
 	
-	inline public function __get(pos:Int):Int {
+	public function asString ():String {
 		
-		// Neko/cpp pseudo array accessors...
-		// No bounds checking is done in the cpp case
-		#if cpp
-		return untyped b[pos];
-		#else
-		return get(pos);
-		#end
+		return readUTFBytes (length);
 		
 	}
 	
 	
-	// #if !no_nme_io
-	// /** @private */ static function __init__() {
+	public function checkData (length:Int) {
 		
-	// 	var factory = function(inLen:Int) { return new ByteArray(inLen); };
-	// 	var resize = function(inArray:ByteArray, inLen:Int) {
+		if (length + position > this.length) {
 			
-	// 		if (inLen > 0)
-	// 			inArray.ensureElem(inLen - 1, true);
-	// 		inArray.length = inLen;
+			__throwEOFi();
 			
-	// 	};
-		
-	// 	var bytes = function(inArray:ByteArray) { return inArray==null ? null :  inArray.b; }
-	// 	var slen = function(inArray:ByteArray) { return inArray == null ? 0 : inArray.length; }
-		
-	// 	var init = Loader.load("nme_byte_array_init", 4);
-	// 	init(factory, slen, resize, bytes);
-		
-	// }
-	// #end
-	
-	
-	inline public function __set(pos:Int, v:Int):Void {
-		
-		// No bounds checking is done in the cpp case
-		#if cpp
-		untyped b[pos] = v;
-		#else
-		set(pos, v);
-		#end
+		}
 		
 	}
 	
 	
-	public function asString():String {
-		
-		return readUTFBytes(length);
-		
-	}
-	
-	
-	public function checkData(inLength:Int) {
-		
-		if (inLength + position > length)
-			ThrowEOFi();
-		
-	}
-	
-	
-	public function clear() {
+	public function clear ():Void {
 		
 		position = 0;
 		length = 0;
@@ -132,417 +103,648 @@ class ByteArray extends Bytes {
 	}
 	
 	
-	/** @private */ private function ensureElem(inSize:Int, inUpdateLenght:Bool) {
+	// public function compress (algorithm:CompressionAlgorithm = null):Void {
 		
-		var len = inSize + 1;
+	// 	#if neko
+	// 	var src = allocated == length ? this : sub(0, length);
+	// 	#else
+	// 	var src = this;
+	// 	#end
 		
-		#if neko
-		if (alloced < len) {
+	// 	if (algorithm == null) {
 			
-			alloced =((len+1) * 3) >> 1;
-			var new_b = untyped __dollar__smake(alloced);
-			untyped __dollar__sblit(new_b, 0, b, 0, length);
+	// 		algorithm = CompressionAlgorithm.ZLIB;
+			
+	// 	}
+		
+	// 	var result:Bytes;
+		
+	// 	if (algorithm == CompressionAlgorithm.LZMA) {
+			
+	// 		result = Bytes.ofData (nme_lzma_encode (src.getData ()));
+			
+	// 	} else {
+			
+	// 		var windowBits = switch (algorithm) {
+				
+	// 			case DEFLATE: -15;
+	// 			case GZIP: 31;
+	// 			default: 15;
+				
+	// 		}
+			
+	// 		#if enable_deflate
+	// 		result = Compress.run (src, 8, windowBits);
+	// 		#else
+	// 		result = Compress.run (src, 8);
+	// 		#end
+			
+	// 	}
+		
+	// 	b = result.b;
+	// 	length = result.length;
+	// 	position = length;
+	// 	#if neko
+	// 	allocated = length;
+	// 	#end
+		
+	// }
+	
+	
+	// public function deflate():Void {
+		
+	// 	compress (CompressionAlgorithm.DEFLATE);
+		
+	// }
+	
+	
+	private function ensureElem (size:Int, updateLength:Bool):Void {
+		var len = size + 1;
+
+		#if neko
+		if (allocated < len) {
+			
+			allocated = ((len+1) * 3) >> 1;
+			var new_b = untyped __dollar__smake (allocated);
+			untyped __dollar__sblit (new_b, 0, b, 0, length);
 			b = new_b;
 			
 		}
 		#else
-		if (b.length < len)
+		if (b.length < len) {
+			
 			untyped b.__SetSize(len);
+			
+		}
 		#end
 		
-		if (inUpdateLenght && length < len)
+		if (updateLength && length < len) {
+			
 			length = len;
-		
-	}
-	
-	
-	static public function fromBytes(inBytes:Bytes) {
-		
-		var result = new ByteArray(-1);
-		result.b = inBytes.b;
-		result.length = inBytes.length;
-		
-		#if neko
-		result.alloced = result.length;
-		#end
-		
-		return result;
-		
-	}
-	
-	
-	public function getLength():Int { return length; }
-	
-	
-	// IMemoryRange
-	public function getByteBuffer():ByteArray { return this; }
-	public function getStart():Int { return 0; }
-	
-
-	
-	public inline function readBoolean():Bool {
-		
-		return (position < length) ? __get(position++) != 0 : ThrowEOFi() != 0;
-		
-	}
-	
-	
-	public inline function readByte():Int {
-		
-		var val:Int = readUnsignedByte();
-		return ((val & 0x80) != 0) ?(val - 0x100) : val;
-		
-	}
-	
-	
-	public function readBytes(outData:ByteArray, inOffset:Int = 0, inLen:Int = 0):Void {
-		
-		if (inLen == 0)
-			inLen = length - position;
-		
-		if (position + inLen > length)
-			ThrowEOFi();
-		
-		if (outData.length < inOffset + inLen)
-			outData.ensureElem(inOffset + inLen - 1, true);
-		
-		#if neko
-		outData.blit(inOffset, this, position, inLen);
-		#else
-		var b1 = b;
-		var b2 = outData.b;
-		var p = position;
-		for (i in 0...inLen)
-			b2[inOffset + i] = b1[p + i];
-		#end
-		
-		position += inLen;
-		
-	}
-	
-	
-	public function readDouble():Float {
-		
-		if (position + 8 > length)
-			ThrowEOFi();
-		
-		#if neko
-		var bytes = new Bytes(8, untyped __dollar__ssub(b, position, 8));
-		#elseif cpp
-		var bytes = new Bytes(8, b.slice(position, position + 8));
-		#end
-		
-		position += 8;
-		return _double_of_bytes(bytes.b, bigEndian);
-		
-	}
-	
-	
-	
-	public function readFloat():Float {
-		
-		if (position + 4 > length)
-			ThrowEOFi();
-		
-		#if neko
-		var bytes = new Bytes(4, untyped __dollar__ssub(b, position, 4));
-		#elseif cpp
-		var bytes = new Bytes(4, b.slice(position, position + 4));
-		#end
-		
-		position += 4;
-		return _float_of_bytes(bytes.b, bigEndian);
-		
-	}
-	
-	
-	public function readInt():Int {
-		
-		var ch1 = readUnsignedByte();
-		var ch2 = readUnsignedByte();
-		var ch3 = readUnsignedByte();
-		var ch4 = readUnsignedByte();
-		
-		return bigEndian ?(ch1 << 24) |(ch2 << 16) |(ch3 << 8) | ch4 :(ch4 << 24) |(ch3 << 16) |(ch2 << 8) | ch1;
-		
-	}
-	
-	
-	public inline function readMultiByte(inLen:Int, charSet:String):String {
-		
-		// TODO - use code page
-		return readUTFBytes(inLen);
-		
-	}
-	
-	
-	public function readShort():Int {
-		
-		var ch1 = readUnsignedByte();
-		var ch2 = readUnsignedByte();
-		
-		var val = bigEndian ?((ch1 << 8) | ch2) :((ch2 << 8) | ch1);
-		
-		return ((val & 0x8000) != 0) ?(val - 0x10000) : val;
-		
-	}
-	
-	
-	inline public function readUnsignedByte():Int {
-		
-		return (position < length) ? __get(position++) : ThrowEOFi();
-		
-	}
-	
-	
-	public function readUnsignedInt():Int {
-		
-		var ch1 = readUnsignedByte();
-		var ch2 = readUnsignedByte();
-		var ch3 = readUnsignedByte();
-		var ch4 = readUnsignedByte();
-		
-		return bigEndian ?(ch1 << 24) |(ch2 << 16) |(ch3 << 8) | ch4 :(ch4 << 24) |(ch3 << 16) |(ch2 << 8) | ch1;
-		
-	}
-	
-	
-	public function readUnsignedShort():Int {
-		
-		var ch1 = readUnsignedByte();
-		var ch2 = readUnsignedByte();
-		
-		return bigEndian ?(ch1 << 8) | ch2 :(ch2 << 8) + ch1;
-		
-	}
-	
-	
-	public function readUTF():String {
-		
-		var len = readUnsignedShort();
-		return readUTFBytes(len);
-		
-	}
-	
-	
-	public function readUTFBytes(inLen:Int):String {
-		
-		if (position + inLen > length)
-			ThrowEOFi();
-		
-		var p = position;
-		position += inLen;
-		
-		#if neko
-		return new String(untyped __dollar__ssub(b, p, inLen));
-		#elseif cpp
-		var result:String="";
-		untyped __global__.__hxcpp_string_of_bytes(b, result, p, inLen);
-		return result;
-		#end
-		
-	}
-	
-	
-	public function setLength(inLength:Int):Void {
-		
-		if (inLength > 0)
-			ensureElem(inLength - 1, false);
-		length = inLength;
-		
-	}
-	
-	
-	// ArrayBuffer interface
-	public function slice(inBegin:Int, ?inEnd:Int):ByteArray {
-		
-		var begin = inBegin;
-		
-		if (begin < 0) {
-			
-			begin += length;
-			if (begin < 0)
-				begin = 0;
 			
 		}
 		
-		var end:Int = inEnd == null ? length : inEnd;
+	}
+	
+	
+	static public function fromBytes (bytes:Bytes):ByteArray {
 		
-		if (end < 0) {
-			
-			end += length;
-			
-			if (end < 0)
-				end = 0;
-			
-		}
-		
-		if (begin >= end)
-			return new ByteArray();
-		
-		var result = new ByteArray(end - begin);
-		
-		var opos = position;
-		result.blit(0, this, begin, end - begin);
-		
+		var result = new ByteArray ( -1);
+		result.__fromBytes (bytes);
 		return result;
 		
 	}
 	
 	
-	/** @private */ private function ThrowEOFi():Int {
+	public function getByteBuffer ():ByteArray {
 		
-		throw "EOFError";
+		return this;
+		
+	}
+	
+	
+	public function getLength ():Int {
+		
+		return length;
+		
+	}
+	
+	
+	public function getStart ():Int {
+		
 		return 0;
 		
 	}
 	
 	
-	
-	/** @private */ inline function write_uncheck(inByte:Int) {
+	// public function inflate ():Void {
 		
-		#if cpp
-		untyped b.__unsafe_set(position++, inByte);
+	// 	uncompress (CompressionAlgorithm.DEFLATE);
+		
+	// }
+	
+	
+	public inline function readBoolean ():Bool {
+		
+		return (position < length) ? __get (position++) != 0 : __throwEOFi () != 0;
+		
+	}
+	
+	
+	public inline function readByte ():Int {
+		
+		var value:Int = readUnsignedByte ();
+		return ((value & 0x80) != 0) ? (value - 0x100) : value;
+		
+	}
+	
+	
+	public function readBytes (data:ByteArray, offset:Int = 0, length:Int = 0):Void {
+		
+		if (length == 0) {
+			
+			length = this.length - position;
+			
+		}
+		
+		if (position + length > this.length) {
+			
+			__throwEOFi();
+			
+		}
+		
+		if (data.length < offset + length) {
+			
+			data.ensureElem (offset + length - 1, true);
+			
+		}
+		
+		#if neko
+		data.blit (offset, this, position, length);
 		#else
-		untyped __dollar__sset(b, position++, inByte & 0xff);
+		var b1 = b;
+		var b2 = data.b;
+		var p = position;
+		for (i in 0...length) {
+			
+			b2[offset + i] = b1[p + i];
+			
+		}
+		#end
+		
+		position += length;
+		
+	}
+	
+	
+	public function readDouble ():Float {
+		
+		if (position + 8 > length) {
+			
+			__throwEOFi ();
+			
+		}
+		
+		#if neko
+		var bytes = new Bytes (8, untyped __dollar__ssub (b, position, 8));
+		#elseif cpp
+		var bytes = new Bytes (8, b.slice (position, position + 8));
+		#end
+		
+		position += 8;
+		return _double_of_bytes (bytes.b, bigEndian);
+		
+	}
+	
+	
+	// #if !no_nme_io
+	
+	// static public function readFile (path:String):ByteArray {
+		
+	// 	return nme_byte_array_read_file (path);
+		
+	// }
+	
+	// #end
+	
+	
+	public function readFloat ():Float {
+		
+		if (position + 4 > length) {
+			
+			__throwEOFi ();
+			
+		}
+		
+		#if neko
+		var bytes = new Bytes (4, untyped __dollar__ssub (b, position, 4));
+		#elseif cpp
+		var bytes = new Bytes (4, b.slice (position, position + 4));
+		#end
+		
+		position += 4;
+		return _float_of_bytes (bytes.b, bigEndian);
+		
+	}
+	
+	
+	public function readInt ():Int {
+		
+		var ch1 = readUnsignedByte ();
+		var ch2 = readUnsignedByte ();
+		var ch3 = readUnsignedByte ();
+		var ch4 = readUnsignedByte ();
+		
+		return bigEndian ? (ch1 << 24) | (ch2 << 16) | (ch3 << 8) | ch4 : (ch4 << 24) | (ch3 << 16) | (ch2 << 8) | ch1;
+		
+	}
+	
+	
+	public inline function readMultiByte (length:Int, charSet:String):String {
+		
+		return readUTFBytes (length);
+		
+	}
+	
+	
+	public function readShort ():Int {
+		
+		var ch1 = readUnsignedByte ();
+		var ch2 = readUnsignedByte ();
+		
+		var value = bigEndian ? ((ch1 << 8) | ch2) : ((ch2 << 8) | ch1);
+		
+		return ((value & 0x8000) != 0) ? (value - 0x10000) : value;
+		
+	}
+	
+	
+	inline public function readUnsignedByte ():Int {
+		
+		return (position < length) ? __get (position++) : __throwEOFi ();
+		
+	}
+	
+	
+	public function readUnsignedInt ():Int {
+		
+		var ch1 = readUnsignedByte ();
+		var ch2 = readUnsignedByte ();
+		var ch3 = readUnsignedByte ();
+		var ch4 = readUnsignedByte ();
+		
+		return bigEndian ? (ch1 << 24) | (ch2 << 16) | (ch3 << 8) | ch4 : (ch4 << 24) | (ch3 << 16) | (ch2 << 8) | ch1;
+		
+	}
+	
+	
+	public function readUnsignedShort ():Int {
+		
+		var ch1 = readUnsignedByte ();
+		var ch2 = readUnsignedByte ();
+		
+		return bigEndian ? (ch1 << 8) | ch2 : (ch2 << 8) + ch1;
+		
+	}
+	
+	
+	public function readUTF ():String {
+		
+		var len = readUnsignedShort ();
+		return readUTFBytes (len);
+		
+	}
+	
+	
+	public function readUTFBytes (length:Int):String {
+		
+		if (position + length > this.length) {
+			
+			__throwEOFi ();
+			
+		}
+		
+		var p = position;
+		position += length;
+		
+		#if neko
+		return new String (untyped __dollar__ssub (b, p, length));
+		#elseif cpp
+		var result = "";
+		untyped __global__.__hxcpp_string_of_bytes (b, result, p, length);
+		return result;
 		#end
 		
 	}
 	
 	
-	public function writeBoolean(value:Bool) {
+	public function setLength (length:Int):Void {
 		
-		writeByte(value ? 1 : 0);
+		if (length > 0) {
+			
+			ensureElem (length - 1, false);
+			
+		}
+		
+		this.length = length;
 		
 	}
 	
 	
-	inline public function writeByte(value:Int) {
+	public function slice (begin:Int, end:Null<Int> = null):ByteArray {
 		
-		ensureElem(position, true);
+		if (begin < 0) {
+			
+			begin += length;
+			
+			if (begin < 0) {
+				
+				begin = 0;
+				
+			}
+			
+		}
+		
+		if (end == null) {
+			
+			end = length;
+			
+		}
+		
+		if (end < 0) {
+			
+			end += length;
+			
+			if (end < 0) {
+				
+				end = 0;
+				
+			}
+			
+		}
+		
+		if (begin >= end) {
+			
+			return new ByteArray ();
+			
+		}
+		
+		var result = new ByteArray (end - begin);
+		
+		var opos = position;
+		result.blit (0, this, begin, end - begin);
+		
+		return result;
+		
+	}
+	
+	
+	// public function uncompress (algorithm:CompressionAlgorithm = null):Void {
+		
+	// 	if (algorithm == null) algorithm = CompressionAlgorithm.ZLIB;
+		
+	// 	#if neko
+	// 	var src = allocated == length ? this : sub (0, length);
+	// 	#else
+	// 	var src = this;
+	// 	#end
+		
+	// 	var result:Bytes;
+		
+	// 	if (algorithm == CompressionAlgorithm.LZMA) {
+			
+	// 		result = Bytes.ofData (nme_lzma_decode (src.getData ()));
+			
+	// 	} else {
+			
+	// 		var windowBits = switch (algorithm) {
+				
+	// 			case DEFLATE: -15;
+	// 			case GZIP: 31;
+	// 			default: 15;
+				
+	// 		}
+			
+	// 		#if enable_deflate
+	// 		result = Uncompress.run (src, null, windowBits);
+	// 		#else
+	// 		result = Uncompress.run (src, null);
+	// 		#end
+			
+	// 	}
+		
+	// 	b = result.b;
+	// 	length = result.length;
+	// 	position = 0;
+	// 	#if neko
+	// 	allocated = length;
+	// 	#end
+		
+	// }
+	
+	
+	private inline function write_uncheck (byte:Int):Void {
+		
+		#if cpp
+		untyped b.__unsafe_set (position++, byte);
+		#else
+		untyped __dollar__sset (b, position++, byte & 0xff);
+		#end
+		
+	}
+	
+	
+	public function writeBoolean (value:Bool):Void {
+		
+		writeByte (value ? 1 : 0);
+		
+	}
+	
+	
+	inline public function writeByte (value:Int):Void {
+		
+		ensureElem (position, true);
 		
 		#if cpp
 		b[position++] = untyped value;
 		#else
-		untyped __dollar__sset(b, position++, value & 0xff);
+		untyped __dollar__sset (b, position++, value & 0xff);
 		#end
 		
 	}
 	
 	
-	public function writeBytes(bytes:Bytes, inOffset:Int = 0, inLength:Int = 0) {
+	public function writeBytes (bytes:Bytes, offset:Int = 0, length:Int = 0):Void {
 		
-		if (inLength == 0) inLength = bytes.length - inOffset;
-		ensureElem(position + inLength - 1, true);
+		if (length == 0) length = bytes.length - offset;
+		ensureElem (position + length - 1, true);
 		var opos = position;
-		position += inLength;
-		blit(opos, bytes, inOffset, inLength);
+		position += length;
+		blit (opos, bytes, offset, length);
 		
 	}
 	
 	
-	public function writeDouble(x:Float) {
+	public function writeDouble (x:Float):Void {
 		
 		#if neko
-		var bytes = new Bytes(8, _double_bytes(x, bigEndian));
+		var bytes = new Bytes (8, _double_bytes (x, bigEndian));
 		#elseif cpp
-		var bytes = Bytes.ofData(_double_bytes(x, bigEndian));
+		var bytes = Bytes.ofData (_double_bytes (x, bigEndian));
 		#end
 		
-		writeBytes(bytes);
+		writeBytes (bytes, 0, 0);
 		
 	}
 	
 	
-	public function writeFloat(x:Float) {
+	// #if !no_nme_io
+	
+	// public function writeFile (path:String):Void {
+		
+	// 	nme_byte_array_overwrite_file(path, this);
+		
+	// }
+	
+	// #end
+	
+	
+	public function writeFloat (x:Float):Void {
 		
 		#if neko
-		var bytes = new Bytes(4, _float_bytes(x, bigEndian));
+		var bytes = new Bytes (4, _float_bytes (x, bigEndian));
 		#elseif cpp
-		var bytes = Bytes.ofData(_float_bytes(x, bigEndian));
+		var bytes = Bytes.ofData (_float_bytes (x, bigEndian));
 		#end
 		
-		writeBytes(bytes);
+		writeBytes (bytes, 0, 0);
 		
 	}
 	
 	
-	public function writeInt(value:Int) {
+	public function writeInt (value:Int):Void {
 		
-		ensureElem(position + 3, true);
+		ensureElem (position + 3, true);
 		
 		if (bigEndian) {
 			
-			write_uncheck(value >> 24);
-			write_uncheck(value >> 16);
-			write_uncheck(value >> 8);
-			write_uncheck(value);
+			write_uncheck (value >> 24);
+			write_uncheck (value >> 16);
+			write_uncheck (value >> 8);
+			write_uncheck (value);
 			
 		} else {
 			
-			write_uncheck(value);
-			write_uncheck(value >> 8);
-			write_uncheck(value >> 16);
-			write_uncheck(value >> 24);
+			write_uncheck (value);
+			write_uncheck (value >> 8);
+			write_uncheck (value >> 16);
+			write_uncheck (value >> 24);
 			
 		}
 		
 	}
 	
 	
-	// public function writeMultiByte(value:String, charSet:String)
-	// public function writeObject(object:*)
-	
-	
-	public function writeShort(value:Int) {
+	public function writeShort (value:Int):Void {
 		
-		ensureElem(position + 1, true);
+		ensureElem (position + 1, true);
 		
 		if (bigEndian) {
 			
-			write_uncheck(value >> 8);
-			write_uncheck(value);
+			write_uncheck (value >> 8);
+			write_uncheck (value);
 			
 		} else {
 			
-			write_uncheck(value);
-			write_uncheck(value >> 8);
+			write_uncheck (value);
+			write_uncheck (value >> 8);
 			
 		}
 		
 	}
 	
 	
-	public function writeUnsignedInt(value:Int) {
+	public function writeUnsignedInt (value:Int):Void {
 		
-		writeInt(value);
-		
-	}
-	
-	
-	public function writeUTF(s:String) {
-		
-		#if neko
-		var bytes = new Bytes(s.length, untyped s.__s);
-		#else
-		var bytes = Bytes.ofString(s);
-		#end
-		
-		writeShort(bytes.length);
-		writeBytes(bytes);
+		writeInt (value);
 		
 	}
 	
 	
-	public function writeUTFBytes(s:String) {
+	public function writeUTF (s:String):Void {
 		
 		#if neko
-		var bytes = new Bytes(s.length, untyped s.__s);
+		var bytes = new Bytes (s.length, untyped s.__s);
 		#else
-		var bytes = Bytes.ofString(s);
+		var bytes = Bytes.ofString (s);
 		#end
 		
-		writeBytes(bytes);
+		writeShort (bytes.length);
+		writeBytes (bytes, 0, 0);
+		
+	}
+	
+	
+	public function writeUTFBytes(s:String):Void {
+		
+		#if neko
+		var bytes = new Bytes (s.length, untyped s.__s);
+		#else
+		var bytes = Bytes.ofString (s);
+		#end
+		
+		writeBytes (bytes, 0, 0);
+		
+	}
+	
+	
+	@:noCompletion private inline function __fromBytes (bytes:Bytes):Void {
+		
+		b = bytes.b;
+		length = bytes.length;
+		
+		#if neko
+		allocated = length;
+		#end
+		
+	}
+	
+	
+	@:noCompletion @:keep inline public function __get (pos:Int):Int {
+		
+		#if cpp
+		return untyped b[pos];
+		#else
+		return get (pos);
+		#end
+		
+	}
+	
+	
+	// #if !no_nme_io
+	
+	// @:noCompletion private static function __init__ ():Void {
+		
+	// 	var factory = function (length:Int) { return new ByteArray (length); };
+	// 	var resize = function (bytes:ByteArray, length:Int):Void {
+			
+	// 		if (length > 0) {
+				
+	// 			bytes.ensureElem (length - 1, true);
+				
+	// 		}
+			
+	// 		bytes.length = length;
+			
+	// 	};
+		
+	// 	var bytes = function (bytes:ByteArray) { return bytes == null ? null : bytes.b; }
+	// 	var slen = function(bytes:ByteArray) { return bytes == null ? 0 : bytes.length; }
+		
+	// 	var init = Lib.load ("nme", "nme_byte_array_init", 4);
+	// 	init (factory, slen, resize, bytes);
+		
+	// }
+	
+	// #end
+	
+	
+	@:noCompletion @:keep inline public function __set (pos:Int, v:Int):Void {
+		
+		#if cpp
+		untyped b[pos] = v;
+		#else
+		set (pos, v);
+		#end
+		
+	}
+	
+	
+	@:noCompletion private function __throwEOFi ():Int {
+		
+		// throw new EOFError ();
+		throw "EOF ERROR : __throwEOFi";
+		return 0;
 		
 	}
 	
@@ -554,10 +756,10 @@ class ByteArray extends Bytes {
 	
 	
 	
-	private function get_bytesAvailable():Int { return length - position; }
-	private function get_byteLength():Int { return length; }
-	private function get_endian():String { return bigEndian ? Endian.BIG_ENDIAN : Endian.LITTLE_ENDIAN; }
-	private function set_endian(s:String):String { bigEndian =(s == Endian.BIG_ENDIAN); return s; }
+	private function get_bytesAvailable ():Int { return length - position; }
+	private function get_byteLength ():Int { return length; }
+	private function get_endian ():String { return bigEndian ? Endian.BIG_ENDIAN : Endian.LITTLE_ENDIAN; }
+	private function set_endian (value:String):String { bigEndian = (value == Endian.BIG_ENDIAN); return value; }
 	
 	
 	
@@ -567,15 +769,16 @@ class ByteArray extends Bytes {
 	
 	
 	
-	/** @private */ private static var _double_bytes = Lib.load("std", "double_bytes", 2);
-	/** @private */ private static var _double_of_bytes = Lib.load("std", "double_of_bytes", 2);
-	/** @private */ private static var _float_bytes = Lib.load("std", "float_bytes", 2);
-	/** @private */ private static var _float_of_bytes = Lib.load("std", "float_of_bytes", 2);
-	
-
-	
+	private static var _double_bytes = Lib.load ("std", "double_bytes", 2);
+	private static var _double_of_bytes = Lib.load ("std", "double_of_bytes", 2);
+	private static var _float_bytes = Lib.load ("std", "float_bytes", 2);
+	private static var _float_of_bytes = Lib.load ("std", "float_of_bytes", 2);
+	// #if !no_nme_io
+	// private static var nme_byte_array_overwrite_file = Lib.load ("nme", "nme_byte_array_overwrite_file", 2);
+	// private static var nme_byte_array_read_file = Lib.load ("nme", "nme_byte_array_read_file", 1);
+	// #end
+	// private static var nme_lzma_encode = Lib.load ("nme", "nme_lzma_encode", 1);
+	// private static var nme_lzma_decode = Lib.load ("nme", "nme_lzma_decode", 1);
 	
 }
-
-
 #end

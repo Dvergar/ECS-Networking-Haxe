@@ -8,9 +8,8 @@ import sys.io.File;
 
 import enh.Constants;
 
-typedef RPCType = {id:Int, name:String, argTypes:Array<Array<String>>};
 
-// entitiesByOutput[ba] line 451 doesn' exists
+typedef RPCType = {id:Int, name:String, argTypes:Array<Array<String>>};
 
 
 class RPCMacro
@@ -210,8 +209,9 @@ class RPCMacro
             serializationBlock.push(macro connections[socket].output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro connections[socket].output.writeByte($v{rpcId}));
             #elseif client
-            serializationBlock.push(macro enh.output.writeByte($v{CONST.RPC}));
-            serializationBlock.push(macro enh.output.writeByte($v{rpcId}));
+            // A longer path maybe ? Refactor dat shit
+            serializationBlock.push(macro enh.socket.conn.output.writeByte($v{CONST.RPC}));
+            serializationBlock.push(macro enh.socket.conn.output.writeByte($v{rpcId}));
             #end
 
             // var typeExport:Array<Array<Array<String>>> = new Array();
@@ -241,9 +241,9 @@ class RPCMacro
                 switch(argTypeString)
                 {
                     case "String":                        
-                        serializationBlock.push( macro enh.output.writeUTF($i{varName}) );
+                        serializationBlock.push( macro enh.socket.conn.output.writeUTF($i{varName}) );
                     case "Int":
-                        serializationBlock.push( macro enh.output.writeInt($i{varName}) );
+                        serializationBlock.push( macro enh.socket.conn.output.writeInt($i{varName}) );
                 }
                 #end
             }
@@ -254,10 +254,10 @@ class RPCMacro
             #elseif server
             // funcBlock.push(macro var allConn = Enh.em.getAllComponentsOfType(CConnexion));
             // funcBlock.push(macro for(conn in allConn) { $a{serializationBlock} } );
-            funcBlock.push( macro var connections = enh.serverSocket.connections );
+            funcBlock.push( macro var connections = enh.socket.connections );
             funcBlock.push( macro for(socket in connections.keys()) { $a{serializationBlock} } );
             #end
-            funcBlock.push( macro trace("rpc *sent*"));
+            // funcBlock.push( macro trace("rpc *sent*"));
 
             // Build function
             var func = {args:args, ret:null, params:[], expr:{expr:EBlock(funcBlock), pos:pos} };
