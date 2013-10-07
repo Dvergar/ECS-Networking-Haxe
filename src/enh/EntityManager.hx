@@ -47,8 +47,6 @@ class EntityManager
     public function pushEvent(eventName:String, entity:String, ?event:Dynamic,
                               ?cb:Dynamic)
     {
-        // trace("event : " + eventName + " # event : " + event + " # cb : " + cb);
-
         var listeners = listenerTypes.get(eventName);
         if(listeners == null) throw "No listener for event type : " + eventName;
 
@@ -79,6 +77,7 @@ class EntityManager
         }
 
         if(success && cb != null) cb();
+        return success;
     }
 
     //////////////

@@ -41,12 +41,22 @@ class ClientManager
 
         if(msgType == CONST.CREATE)
         {
+            var argsLength = ba.readByte();
+            var args:Array<Int> = [];
+            if(argsLength > 0)
+            {
+                for(i in 0...argsLength)
+                {
+                    args.push(ba.readShort());
+                }
+            }
+
             var entityTypeId = ba.readShort();
             var entityUUID = ba.readShort();
             trace("create entity uuid " + entityUUID);
 
             var entityTypeName = ec.entityTypeNameById[entityTypeId];
-            var entity = enh.ec.functionByEntityType[entityTypeName]();
+            var entity = enh.ec.functionByEntityType[entityTypeName](args);
             trace("entity created " + entity);
 
             for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
@@ -62,12 +72,25 @@ class ClientManager
         if(msgType == CONST.CREATE_OWNED)
         {
             var ownerId = ba.readByte();
+            
+            var argsLength = ba.readByte();
+            trace("argsLength " + argsLength);
+            var args:Array<Int> = [];
+            if(argsLength > 0)
+            {
+                for(i in 0...argsLength)
+                {
+                    args.push(ba.readShort());
+                }
+            }
+            trace("args " + args);
+
             var entityTypeId = ba.readShort();
             var entityUUID = ba.readShort();
             trace("create owned entity uuid " + entityUUID);
 
             var entityTypeName = ec.entityTypeNameById[entityTypeId];
-            var entity = enh.ec.functionByEntityType[entityTypeName]();
+            var entity = enh.ec.functionByEntityType[entityTypeName](args);
             em.addComponent(entity, new CNetOwner(ownerId));
             trace("entity owned created " + entity);
 

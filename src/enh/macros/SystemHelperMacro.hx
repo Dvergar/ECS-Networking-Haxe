@@ -48,7 +48,7 @@ class SystemHelperMacro
         {
             trace("fff " + f);
 
-            if(f.name == "new")
+            if(f.name == "init")
             {
                 switch(f.kind){
                     case FFun(fun):

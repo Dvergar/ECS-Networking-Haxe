@@ -13,6 +13,7 @@ class NetEntity
     public var typeId:Int;
     public var owner:Null<String>;
     public var ownerId:Null<Int>;
+    public var args:Null<Array<Int>>;
 
     public function new(){};
 }
@@ -73,10 +74,12 @@ class ServerManager
         trace("SOCKET : onConnect " + conn.entity);
     }
 
-    public function createNetworkEntity(entityType:String, ?owner:String):String
+    public function createNetworkEntity(entityType:String, ?owner:String, ?args:Array<Int>):String
     {
+        if(args == null) args = new Array();
+
         var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
-        var entity = ec.functionByEntityType[entityType]();
+        var entity = ec.functionByEntityType[entityType](args);
         var conn = connectionsByEntity[owner];
 
         var netEntity = new NetEntity();
@@ -86,6 +89,7 @@ class ServerManager
         netEntity.typeId = entityTypeId;
         netEntity.owner = owner;
         netEntity.ownerId = conn.id;
+        netEntity.args = args;
 
         netEntityByEntity[entity] = netEntity;
 
@@ -118,6 +122,12 @@ class ServerManager
         else
         {
             output.writeByte(CONST.CREATE);
+        }
+
+        output.writeByte(netEntity.args.length);
+        for(arg in netEntity.args)
+        {
+            output.writeShort(arg);
         }
 
         output.writeShort(netEntity.typeId);

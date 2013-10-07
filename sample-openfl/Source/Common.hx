@@ -1,10 +1,11 @@
-import enh.EntityManager;
+// import enh.EntityManager;
 import enh.Builders;
 
 #if (flash || openfl)
 import flash.display.Shape;
 import Client;
 #end
+
 import enh.ByteArray;
 
 
@@ -32,7 +33,7 @@ class CComponentTest extends Component
 }
 
 
-@:build(enh.macros.MacroTest.buildMap())
+
 class EntityCreator extends EntityCreatowr
 {
     public function new() {
@@ -40,8 +41,13 @@ class EntityCreator extends EntityCreatowr
     }
 
     @freeze
-    public function mouse():String
+    public function mouse(args:Array<Int>):String
     {
+        trace("Mouse spawn at : " + args);
+
+        var x = args[0];
+        var y = args[1];
+
         trace("mouse");
         var player = em.createEntity();
         em.addComponent(player, new CPosition(100, 100));
@@ -50,7 +56,7 @@ class EntityCreator extends EntityCreatowr
         #if client
         var shape = new Shape();
         shape.graphics.beginFill(0x3FBF2E);
-        shape.graphics.drawRect(0, 0, 100, 100);
+        shape.graphics.drawRect(0, 0, x, y);
         shape.graphics.endFill();
 
         em.addComponent(player, new CDrawable(shape));

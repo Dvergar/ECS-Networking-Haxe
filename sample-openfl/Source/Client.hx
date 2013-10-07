@@ -11,9 +11,9 @@ import flash.events.SecurityErrorEvent;
 import flash.events.ProgressEvent;
 import flash.utils.ByteArray;
 
-import enh.EntityManager;
+// import enh.EntityManager;
 import enh.Builders;
-import enh.ClientManager;
+// import enh.ClientManager;
 
 import Common;
 
@@ -37,7 +37,7 @@ class CDrawable extends Component
 }
 
 
-class InputSystem extends System<Client>
+class InputSystem extends System<Client, EntityCreator>
 {
     public function init() {}
 
@@ -53,7 +53,7 @@ class InputSystem extends System<Client>
 }
 
 
-class DrawableSystem extends System<Client>
+class DrawableSystem extends System<Client, EntityCreator>
 {
     public function init()
     {
@@ -74,19 +74,24 @@ class DrawableSystem extends System<Client>
 }
 
 
-class Client extends Enh {
-    public function new () {
-        super(EntityCreator);
+class Client extends Enh2<Client, EntityCreator>
+{
+    public function new()
+    {
+        super(this, EntityCreator);
+    }
 
+    public function init()
+    {
         connect("192.168.1.4", 32000);
 
         @addSystem DrawableSystem;
         @addSystem InputSystem;
 
         @registerListener "NET_ACTION_LOL";
+        @registerListener "CONNECTION";
 
-        this.em.registerListener("CONNECTION", onConnection);
-        // flash.Lib.current.stage.addEventListener(Event.ENTER_FRAME, onEnterFrame);
+        // this.em.registerListener("CONNECTION", onConnection);
 
         startLoop(loop, 1/60);
     }

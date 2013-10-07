@@ -17,6 +17,7 @@ class Template
 
         fields = RPCMacro._processRPCs(fields);
         fields = EventMacro._processEvents(fields);
+        fields = SystemHelperMacro._replaceMetas(fields);
 
         return fields;
 	}

@@ -4,7 +4,7 @@ import enh.Builders;
 import Common;
 
 
-class MouseMovementSystem extends System<Server>
+class MouseMovementSystem extends System<Server, EntityCreator>
 {
     public function init()
     {
@@ -21,17 +21,20 @@ class MouseMovementSystem extends System<Server>
 }
 
 
-class Server extends Enh
+class Server extends Enh2<Server, EntityCreator>
 {
     public function new()
     {
-        super(EntityCreator);
+        super(this, EntityCreator);
+    }
+
+    public function init()
+    {
         this.startServer("", 32000);
 
         @addSystem MouseMovementSystem;
 
         this.em.registerListener("CONNECTION", onConnection);
-        // this.em.registerListener("DATA", onData);
         this.em.registerListener("NET_HELLO", onNetHello);
 
         this.startLoop(loop, 1/60);
@@ -47,7 +50,7 @@ class Server extends Enh
     {
         net.sendWorldStateTo(connectionEntity);
 
-        var mouseEntity = net.createNetworkEntity("mouse", connectionEntity);
+        var mouseEntity = net.createNetworkEntity("mouse", connectionEntity, [100, 100]);
         net.setConnectionEntityFromTo(connectionEntity, mouseEntity);
 
         trace("onConnection " + connectionEntity);
