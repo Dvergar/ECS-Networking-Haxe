@@ -33,7 +33,7 @@ class Socket extends SocketHelper implements ISocketClient
 	public function connect(ip:String, port:Int)
 	{
 		trace("connect");
-        socket.connect("192.168.1.4", 32000);
+        socket.connect(ip, port);
 	}
 
     public function pumpIn()

@@ -44,7 +44,7 @@ class MacroTest
 
     macro static public function buildMap():Array<haxe.macro.Field>
     {
-        trace("############# buildMap #############");
+        // trace("############# buildMap #############");
 
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
@@ -59,17 +59,17 @@ class MacroTest
 
         for (f in fields)
         {
-            trace("#########");
+            // trace("#########");
             // trace(f);
 
             if(f.meta.length != 0)
             {
                 for(m in f.meta)
                 {
-                    trace("metanames "  + m.name);
+                    // trace("metanames "  + m.name);
                     if(m.name == "loltest")
                     {
-                        trace("LOLTEST " + f);
+                        // trace("LOLTEST " + f);
 
                         switch(f.kind){
                             case FFun(fun):
@@ -80,7 +80,7 @@ class MacroTest
 
                     if(m.name == "freeze")
                     {
-                        trace("METHOD " + f.name);
+                        // trace("METHOD " + f.name);
                         var methodName = f.name;
 
                         getEntityId();
@@ -108,29 +108,29 @@ class MacroTest
                                                             switch(call.expr)
                                                             {
                                                                 case EField(dummy, field):
-                                                                    trace("entity : " + entity);
+                                                                    // trace("entity : " + entity);
                                                                     var createEntity = field == "createEntity";
-                                                                    trace("create entity ? " + createEntity);
+                                                                    // trace("create entity ? " + createEntity);
                                                                 default:
                                                             }
                                                         default:
                                                     }
                                                 case ECall(call, dummy):
-                                                    trace("kall " + call);
+                                                    // trace("kall " + call);
                                                     switch(call.expr)
                                                     {
                                                         case EField(c, field):
-                                                            trace("methodd : " + field);
+                                                            // trace("methodd : " + field);
                                                             if(field == "addComponent")
                                                             {
-                                                                trace("dummyy " + dummy);
+                                                                // trace("dummyy " + dummy);
                                                                 switch(dummy[0].expr)
                                                                 {
                                                                     case EConst(identity):
                                                                         switch(identity)
                                                                         {
                                                                             case CIdent(entity):
-                                                                                trace("component entity : " + entity);
+                                                                                // trace("component entity : " + entity);
                                                                             default:
                                                                         }
                                                                     default:
@@ -139,7 +139,7 @@ class MacroTest
                                                                 {
                                                                     case ENew(n, a):
                                                                         var component = n.name;
-                                                                        trace("compcomp :" + component);
+                                                                        // trace("compcomp :" + component);
 
                                                                         componentsList.push(component);
                                                                         // assignedComponents.set(component);
@@ -216,7 +216,7 @@ class MacroTest
         // PRINTER SAMPLE
         for(f in fields)
         {
-            trace("humpf : " + new haxe.macro.Printer().printField(f));
+            // trace("humpf : " + new haxe.macro.Printer().printField(f));
         }
 
         haxe.macro.Context.onGenerate(function(types)
@@ -311,7 +311,7 @@ class MacroTest
 
         for(f in fields)
         {
-            trace("meta " + f.meta);
+            // trace("meta " + f.meta);
 
             if(f.meta.length != 0)
             {
@@ -322,7 +322,7 @@ class MacroTest
                     if(m.name == "short" ||
                        m.name == "byte")
                     {
-                        trace("added " + m.name + " / " + f.name);
+                        // trace("added " + m.name + " / " + f.name);
                         varTypeByVarName[f.name] = m.name;
                     }
                 }
@@ -341,7 +341,7 @@ class MacroTest
         if(Lambda.empty(varTypeByVarName)) return fields;
 
         ////////////////////////////////////////
-        // RETURN HERE PLEASE DONT FORGET HIM
+        // RETURN HERE PLEASE DONT FORGET HIM :'('
         ////////////////////////////////////////
 
         trace("varTypeByVarName " + varTypeByVarName);

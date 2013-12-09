@@ -32,7 +32,7 @@ class EntityManager
 
     public function registerListener(eventName:String, f:Dynamic)
     {
-        trace("register listener " + eventName);
+        // trace("register listener " + eventName);
         var listeners = listenerTypes.get(eventName);
 
         if(listeners == null)
@@ -113,6 +113,7 @@ class EntityManager
     public function removeComponentOfType<T>(entity:String,
                                              componentClass:Class<T>)
     {
+        trace("remove " + componentClass);
         var className = Type.getClassName(componentClass);
         var store:Map<String, Component> = componentStores.get(className);
 
@@ -185,6 +186,7 @@ class EntityManager
 
     public function killEntityNow(entity:String)
     {
+        trace("destroy " + entity);
         for(componentStore in componentStores.iterator())
         {
             if(componentStore.exists(entity))
@@ -256,6 +258,11 @@ class EntityManager
         }
 
         parentChild.get(parent).push(entity);
+    }
+
+    public function removeChild(entity:String, parent:String)
+    {
+        parentChild.get(parent).remove(entity);
     }
 
     public function debugGetComponentsStringOfEntity(entity:String):String

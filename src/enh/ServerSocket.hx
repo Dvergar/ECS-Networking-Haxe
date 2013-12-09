@@ -30,6 +30,7 @@ class ServerSocket extends SocketHelper
         serverSocket.listen(1);
         serverSocket.setBlocking(false);
         sockets.push(serverSocket);
+        trace("plouf");
     }
 
     public function pumpIn():Void

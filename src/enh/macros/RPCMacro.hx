@@ -37,9 +37,9 @@ class RPCMacro
             case EMeta(rpc, link): // handle s 
                 if(rpc.name == "RPC")
                 {
-                    trace("RPC FOUND !!! " + rpc);
-                    trace("RPC FOUND link !!! " + link);
-                    trace("hep " + e);
+                    // trace("RPC FOUND !!! " + rpc);
+                    // trace("RPC FOUND link !!! " + link);
+                    // trace("hep " + e);
                     rpcMetas.push(e);
                 }
             case _: haxe.macro.ExprTools.iter(e, getRPCMetas);
@@ -82,15 +82,15 @@ class RPCMacro
     #if macro
     public static function getRPCArgumentTypes(e:Expr):Array<Array<String>>
     {
-        trace("argumentexpr " + e);
+        // trace("argumentexpr " + e);
         var args:Array<Array<String>> = new Array();
 
         switch(e.expr)
         {
             case EObjectDecl(fields):
-                trace("fifi " + fields);
-                trace("ploop " + fields[0].expr);
-                trace("nook " + Context.typeof(fields[0].expr));
+                // trace("fifi " + fields);
+                // trace("ploop " + fields[0].expr);
+                // trace("nook " + Context.typeof(fields[0].expr));
 
                 for(field in fields)
                 {
@@ -164,14 +164,14 @@ class RPCMacro
 
     public static function _processRPCs(fields:Array<Field>):Array<haxe.macro.Field>
     {
-        trace("############# _processRPCs #############");
+        // trace("############# _processRPCs #############");
         var pos = Context.currentPos();
 
         // RESET FIELDS SINCE ITS USED ALSO BY OTHER MACROS
         rpcMetas = new Array();
 
         getRPCs(fields);
-        trace("RPCEPXRS " + rpcMetas);
+        // trace("RPCEPXRS " + rpcMetas);
         
 
         for(rpcExpr in rpcMetas)
@@ -192,10 +192,10 @@ class RPCMacro
 
             var functionName = getFunctionName(name);
 
-            trace("rpcname " + name);
-            trace("functionName " + functionName);
-            trace("argTypes " + argTypes);
-            trace("argExprs " + argExprs);
+            // trace("rpcname " + name);
+            // trace("functionName " + functionName);
+            // trace("argTypes " + argTypes);
+            // trace("argExprs " + argExprs);
 
             // // CHANGE FUNCTION NAME & ARGUMENTS
             rpcExpr.expr = ECall({ expr:EConst(CIdent(functionName)), pos:pos }, argExprs);
@@ -267,7 +267,7 @@ class RPCMacro
 
         for(f in fields)
         {
-            trace("PRPC : " + new haxe.macro.Printer().printField(f));
+            // trace("PRPC : " + new haxe.macro.Printer().printField(f));
         }
 
         // RPC TYPING
@@ -276,13 +276,13 @@ class RPCMacro
         fields = rpcTyper(fields, pos);
         #end
 
-        trace("NOOGA");
+        // trace("NOOGA");
         // EXPORT RPC TYPES TO FILE
         haxe.macro.Context.onGenerate(function (types) {
             if(!rpcsExported)
             {
-                trace("ongenerate " + onGenerateIndex);
-                trace("clsname " + Context.getLocalClass().get());
+                // trace("ongenerate " + onGenerateIndex);
+                // trace("clsname " + Context.getLocalClass().get());
                 onGenerateIndex++;
                 #if server
                 // SERVER RPCSOUT
@@ -306,8 +306,8 @@ class RPCMacro
                 filesCheck();
                 var oldRpcsOutSerialized = File.getContent("Source/client_rpcsOut.txt");
                 var rpcSOutSerialized = haxe.Serializer.run(rpcsOut);
-                trace("oldRpcsOutSerialized " + oldRpcsOutSerialized);
-                trace("rpcSOutSerialized " + rpcSOutSerialized);
+                // trace("oldRpcsOutSerialized " + oldRpcsOutSerialized);
+                // trace("rpcSOutSerialized " + rpcSOutSerialized);
 
                 if(oldRpcsOutSerialized != rpcSOutSerialized)
                 {
@@ -330,7 +330,7 @@ class RPCMacro
     #end
     macro static public function processRPCs():Array<haxe.macro.Field>
     {
-        trace("############# processRPCs #############");
+        // trace("############# processRPCs #############");
 
         var fields = Context.getBuildFields();
         var pos = Context.currentPos();
@@ -351,7 +351,7 @@ class RPCMacro
         {
             if(f.name.substr(0, 5) == "onNet")
             {
-                trace("PLOOM");
+                // trace("PLOOM");
                 rpcsIn.set(f.name, EventMacro.getMetaTypes(f.name, fields));
             }
         }
@@ -401,7 +401,7 @@ class RPCMacro
 
     macro static public function addRpcUnserializeMethod():Array<haxe.macro.Field>
     {
-        trace("############# rpcUnserializer #############");
+        // trace("############# rpcUnserializer #############");
 
         var fields = Context.getBuildFields();
         var pos = Context.currentPos();
@@ -414,7 +414,7 @@ class RPCMacro
         var rpcTypes:Array<RPCType> = haxe.Unserializer.run( File.getContent("client_rpcsOut.txt") );
         #end
 
-        trace("KAWAI " + rpcTypes);
+        // trace("KAWAI " + rpcTypes);
 
         var block = [];
         // block.push(macro trace("plume ba " + ba.bytesAvailable));
@@ -478,7 +478,7 @@ class RPCMacro
         // PRINT
         for(f in fields)
         {
-            trace("gol : " + new haxe.macro.Printer().printField(f));
+            // trace("gol : " + new haxe.macro.Printer().printField(f));
         }
 
         return fields;
@@ -530,7 +530,7 @@ class RPCMacro
     #if macro
     static public function rpcTyper(fields:Array<Field>, pos:Position):Array<haxe.macro.Field>
     {
-        trace("############# rpcTyper #############");
+        // trace("############# rpcTyper #############");
 
         filesCheck();
         var rpcsServerOut:Array<RPCType> = haxe.Unserializer.run( File.getContent("Source/server_rpcsOut.txt") );
@@ -538,10 +538,10 @@ class RPCMacro
         var rpcsClientOut = rpcsOut;
         var rpcsClientIn = rpcsIn;
 
-        trace("rpcsServerOut : " + rpcsServerOut);
-        trace("rpcsServerIn : " + rpcsServerIn);
-        trace("rpcsClientOut : " + rpcsClientOut);
-        trace("rpcsClientIn : " + rpcsClientIn);
+        // trace("rpcsServerOut : " + rpcsServerOut);
+        // trace("rpcsServerIn : " + rpcsServerIn);
+        // trace("rpcsClientOut : " + rpcsClientOut);
+        // trace("rpcsClientIn : " + rpcsClientIn);
 
         haxe.macro.Context.onGenerate(function (types) {
             compareRPCTypes(CONST.SERVER, rpcsServerOut, rpcsClientIn);

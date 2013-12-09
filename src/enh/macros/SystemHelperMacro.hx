@@ -13,9 +13,9 @@ class SystemHelperMacro
             case EMeta(rpc, link): // handle s 
                 if(rpc.name == "addSystem")
                 {
-                    trace("addsystem FOUND !!! " + rpc);
-                    trace("addsystem FOUND link !!! " + link);
-                    trace("hep " + e);
+                    // trace("addsystem FOUND !!! " + rpc);
+                    // trace("addsystem FOUND link !!! " + link);
+                    // trace("hep " + e);
                     metas.push(e);
                 }
             case _: haxe.macro.ExprTools.iter(e, getMetas);
@@ -46,7 +46,7 @@ class SystemHelperMacro
         // GET METAS
         for(f in fields)
         {
-            trace("fff " + f);
+            // trace("fff " + f);
 
             if(f.name == "init")
             {
@@ -58,7 +58,7 @@ class SystemHelperMacro
             }
         }
 
-        trace("mamoo " + metas);
+        // trace("mamoo " + metas);
         for(meta in metas)
         {
             switch(meta.expr)
@@ -73,7 +73,7 @@ class SystemHelperMacro
 
         for(f in fields)
         {
-            trace("boo2 : " + new haxe.macro.Printer().printField(f));
+            // trace("boo2 : " + new haxe.macro.Printer().printField(f));
         }
 
         return fields;
@@ -82,7 +82,7 @@ class SystemHelperMacro
     macro static public function replaceMetas():Array<Field>
     {
 
-        trace("SystemHelperMacro ");
+        // trace("SystemHelperMacro ");
         var fields = Context.getBuildFields();
 
         _replaceMetas(fields);

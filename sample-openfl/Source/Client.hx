@@ -18,6 +18,7 @@ import enh.Builders;
 import Common;
 
 
+
 class CDrawable extends Component
 {
     public var displayObject:DisplayObject;
@@ -83,7 +84,7 @@ class Client extends Enh2<Client, EntityCreator>
 
     public function init()
     {
-        connect("192.168.1.4", 32000);
+        connect("192.168.1.2", 32000);
 
         @addSystem DrawableSystem;
         @addSystem InputSystem;

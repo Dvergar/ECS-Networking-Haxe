@@ -41,7 +41,7 @@ class EntityCreatowr
     public var entityTypeIdByEntityTypeName:Map<String, Int>;
     public var entityTypeNameById:Map<Int, String>;
     public var functionByEntityType:Map<String, Array<Int>->String>;
-    public var componentsNameByEntityId:Array<Array<Int>>;
+    public var componentsNameByEntityId:Array<Array<Int>>; // ComponentName ? Component Id !
     public var syncComponentsNameByEntityId:Array<Array<Int>>;
     public var networkComponents:Array<Component>;
     public var syncedEntities:Array<Bool>;
@@ -113,7 +113,6 @@ class EntityCreatowr
 }
 
 
-
 @:autoBuild(enh.macros.Template.system())
 class System<ROOTTYPE, ECTYPE>
 {
@@ -153,8 +152,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
         // this.root = cast(this, ROOTTYPE);
         this.ec = Type.createInstance(entityCreatorType, []);
         this.ec.em = Enh2.EM;
-
-
         this.enh = this; // allows root to also _processRPCs correctly
 
         // Only only used as a helper to reach ec & em without type parameter
@@ -172,7 +169,8 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     public function addSystem<U>(systemClass:Class<U>):U
     {
-        var system:U = Type.createInstance(systemClass, []);
+        // var system:U = Type.createInstance(systemClass, []);
+        var system:U = Type.createEmptyInstance(systemClass);
 
         Reflect.setField(system, "em", Enh2.EM);
         Reflect.setField(system, "root", root);
@@ -216,7 +214,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     public function startLoop(loopFunc:Void -> Void, rate:Float)
     {
-        trace("startloop");
         this.oldTime = Timer.getTime();
         this.accumulator = 0;
         this.rate = rate;
@@ -248,7 +245,9 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     public function startServer(address:String, port:Int)
     {
-        socket = new ServerSocket(address, port, this._enh);
+        trace("startserver");
+        this.socket = new ServerSocket(address, port, this._enh);
+        trace("socket " + Type.getClass(socket));
         return socket;
     }
     #end

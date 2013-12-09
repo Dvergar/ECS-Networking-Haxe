@@ -119,13 +119,13 @@ class EventMacro
             var wordsUpperCaseFirst = Lambda.map(words, function(w) { return toUpperCaseFirst(w); } );
             var functionName = "on" + wordsUpperCaseFirst.join("");
 
-            trace("WOOOOOOOOOOOOOOOOOOOOORDS : " + functionName);
+            // trace("WOOOOOOOOOOOOOOOOOOOOORDS : " + functionName);
             
             // PUSH FUNCTION
             var registerEventExpr = macro em.registerListener($v{eventName}, $i{functionName});
-            trace("Expr for " + eventName + " : " + eventsName2expr.get(eventName));
+            // trace("Expr for " + eventName + " : " + eventsName2expr.get(eventName));
 
-            trace("registerblabla " + registerEventExpr);
+            // trace("registerblabla " + registerEventExpr);
 
             eventsName2expr.get(eventName).expr = registerEventExpr.expr;
         }
@@ -224,7 +224,7 @@ class EventMacro
             }
         }
 
-        trace("WOOOT " + eventsName2expr);
+        // trace("WOOOT " + eventsName2expr);
         
         // REPLACE TO FUNCTION CALL
         replaceMetaListeners();
