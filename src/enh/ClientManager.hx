@@ -12,7 +12,7 @@ class ClientManager
     private var ec:EntityCreatowr;
     private var entitiesById:Map<Int, String>;
     private var me:String;
-    private var myId:Int;
+    public static var myId:Int; // Workaround LD48
 
     public function new(enh:Enh)
     {
@@ -24,20 +24,22 @@ class ClientManager
 
     public function processDatas(conn:Connection)
     {
+        // trace("paf");
         var ba = conn.input;
         var msgType = ba.readByte();
 
         // SWITCH PLEASE
         if(msgType == CONST.CONNECTION)  // MY connection
         {
-            trace("CONNECTION");
             myId = ba.readShort();
+            trace("CONNECTION " + myId);
             me = em.createEntity();
 
             conn.output.writeByte(CONST.CONNECTION);
 
             em.pushEvent("CONNECTION", me, {});
         }
+        // trace("oop");
 
         if(msgType == CONST.CREATE)
         {
@@ -139,7 +141,7 @@ class ClientManager
 
         if(msgType == CONST.RPC)
         {
-            trace("RPC received");
+            // trace("RPC received");
             unserializeRpc(ba, "dummy");
         }
     }

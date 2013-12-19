@@ -22,20 +22,21 @@ class NetEntity
 @:build(enh.macros.RPCMacro.addRpcUnserializeMethod())
 class ServerManager
 {
+    public var socket:ServerSocket;  // WORKAROUND FOR LD28, need to clean
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
     private var ids:IdManager;
     private var netEntityByEntity:Map<String, NetEntity>;
     private var syncingEntities:Array<NetEntity>;
-    private var entityIdByConnectionEntity:Map<String, Int>;
-    private var connectionsByEntity:Map<String, Connection>;
+    // private var entityIdByConnectionEntity:Map<String, Int>;
+    public var connectionsByEntity:Map<String, Connection>;
 
     public function new(enh:Enh)
     {
         this.connectionsByEntity = new Map();
         this.netEntityByEntity = new Map();
-        this.entityIdByConnectionEntity = new Map();
+        // this.entityIdByConnectionEntity = new Map();
         this.syncingEntities = new Array();
         this.ids = new IdManager(500);
 
@@ -56,6 +57,23 @@ class ServerManager
         }
     }
 
+    public function disconnectEntity(entity:String)
+    {
+        
+    }
+
+    public function connect(conn:Connection)
+    {
+
+    }
+
+    public function disconnect(conn:Connection)
+    {
+        em.pushEvent("DISCONNECTION", conn.entity, {});
+        var entity = conn.entity;
+        connectionsByEntity.remove(entity);
+    }
+
     public function setConnectionEntityFromTo(connectionEntity:String,
                                               newConnectionEntity:String)
     {
@@ -64,14 +82,6 @@ class ServerManager
 
         connectionsByEntity.remove(connectionEntity);
         connectionsByEntity[newConnectionEntity] = conn;
-    }
-
-    public function onConnect(conn:Connection)
-    {
-        conn.output.writeByte(CONST.CONNECTION);
-        conn.output.writeShort(conn.id);
-
-        trace("SOCKET : onConnect " + conn.entity);
     }
 
     public function createNetworkEntity(entityType:String, ?owner:String, ?args:Array<Int>):String
@@ -190,7 +200,11 @@ class ServerManager
 
     public function processDatas(conn:Connection)
     {
+        // handle this for SYNC as well
+        // trace("datas from " + conn.entity);
+
         var msgType = conn.input.readByte();
+        // trace("msgtype " + msgType);
 
         if(msgType == CONST.CONNECTION)
         {
@@ -198,9 +212,12 @@ class ServerManager
             conn.entity = entity;
             connectionsByEntity[entity] = conn;
 
+            trace("plop");
+            socket.connect(conn);
             em.pushEvent("CONNECTION", conn.entity, {});
         }
 
+        if(!connectionsByEntity.exists(conn.entity)) return;
         if(msgType == CONST.RPC)
         {
             unserializeRpc(conn.input, conn.entity);

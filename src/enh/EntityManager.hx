@@ -7,17 +7,21 @@ import enh.Builders;
 
 class EntityManager
 {
-    private var componentStores:Map<String, Map<String, Component>>;
-    private var parentChild:Map<String, Array<String>>;
-    private var listenerTypes:Map<String, Array<Dynamic>>;
-    private var killables:List<String>;
+    var componentStores:Map<String, Map<String, Component>>;
+    var parentChild:Map<String, Array<String>>;
+    var listenerTypes:Map<String, Array<Dynamic>>;
+    var killables:List<String>;
+    public var entitiesById:Map<Int, String>; // switch to private, was just for ld debugging
+    var ids:Int;
 
     public function new()
     {
         this.componentStores = new Map();
         this.listenerTypes = new Map<String, Array<Dynamic>>();
         this.parentChild = new Map<String, Array<String>>();
+        this.entitiesById = new Map<Int, String>();
         this.killables = new List<String>();
+        this.ids = 0;
     }
 
     public function createEntity()
@@ -47,6 +51,7 @@ class EntityManager
     public function pushEvent(eventName:String, entity:String, ?event:Dynamic,
                               ?cb:Dynamic)
     {
+        // trace("pushEvent " + eventName);
         var listeners = listenerTypes.get(eventName);
         if(listeners == null) throw "No listener for event type : " + eventName;
 
@@ -84,6 +89,31 @@ class EntityManager
     // COMPONENTS
     //////////////
 
+    public function assignId(entity:String):Int
+    {
+        var id = ids++;
+        entitiesById.set(id, entity);
+        addComponent(entity, new CId(id));
+        return id;
+    }
+
+    // Switch argument order
+    public function setId(id:Int, entity:String)
+    {
+        entitiesById.set(id, entity);
+        addComponent(entity, new CId(id));
+    }
+
+    public function getEntityWithId(id:Int):String
+    {
+        return entitiesById.get(id);
+    }
+
+    public function getIdFromEntity(entity:String):Int
+    {
+        return getComponent(entity, CId).value;
+    }
+
     public function addComponent<T>(entity:String, component:T):T
     {
         var className = Type.getClassName(Type.getClass(component));
@@ -101,6 +131,7 @@ class EntityManager
 
     public function removeComponent<T>(entity:String, component:T)
     {
+        // Need to throw an error, this runs with removeComponentOfType args :( 
         var store:Map<String, Component> = componentStores.get(
                                             Type.getClassName(
                                             Type.getClass(component)));
@@ -113,7 +144,6 @@ class EntityManager
     public function removeComponentOfType<T>(entity:String,
                                              componentClass:Class<T>)
     {
-        trace("remove " + componentClass);
         var className = Type.getClassName(componentClass);
         var store:Map<String, Component> = componentStores.get(className);
 
@@ -181,12 +211,22 @@ class EntityManager
 
     public function killEntity(entity:String)
     {
+        // trace("killEntity " + entity);
         this.killables.push(entity);
     }
 
     public function killEntityNow(entity:String)
     {
-        trace("destroy " + entity);
+        // trace("killEntityNow " + entity);
+
+        // IDS
+        if(hasComponent(entity, CId))
+        {
+            var id = getComponent(entity, CId).value;
+            entitiesById.remove(id);
+        }
+
+        // ENTITY
         for(componentStore in componentStores.iterator())
         {
             if(componentStore.exists(entity))
@@ -196,6 +236,8 @@ class EntityManager
             }
         }
 
+
+        // PARENT CHILD
         var children = parentChild.get(entity);
 
         if(children != null) {

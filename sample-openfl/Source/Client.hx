@@ -18,7 +18,6 @@ import enh.Builders;
 import Common;
 
 
-
 class CDrawable extends Component
 {
     public var displayObject:DisplayObject;

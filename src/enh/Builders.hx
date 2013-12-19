@@ -1,6 +1,7 @@
 package enh;
 
 typedef Entity = String;
+typedef Short = Int;
 
 @:autoBuild(enh.macros.MacroTest.buildComponent())
 class Component
@@ -18,6 +19,18 @@ class CNetOwner extends Component
     {
         super();
         this.id = id;
+    }
+}
+
+
+class CId extends Component
+{
+    public var value:Int;
+
+    public function new(value:Int)
+    {
+        super();
+        this.value = value;
     }
 }
 
@@ -205,7 +218,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     #if client
     public var socket:ISocketClient;
-
+    // public var net:Dynamic;
 
     public function connect(ip:String, port:Int)
     {
@@ -237,6 +250,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
         while(true)
         {
+            // trace("acummulator " + accumulator);
             step();
 
             Sys.sleep(rate/2);  // For CPU : Ugly isn't it :3
@@ -247,6 +261,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
     {
         trace("startserver");
         this.socket = new ServerSocket(address, port, this._enh);
+        net.socket = socket;
         trace("socket " + Type.getClass(socket));
         return socket;
     }
@@ -277,48 +292,5 @@ class Enh
         manager = new ClientManager(this);
         #end
     }
-
-    // public function setEntityCreator<T:EntityCreatowr>(entityCreator:Class<T>)
-    // {
-    //     var ec:T = Type.createInstance(entityCreator, []);
-    //     ec.em = this.em;
-    //     this.ec = ec;
-    // }
-
-    // public function addSystem<T:{em:EntityManager}>(system:T):T
-    // {
-    //     trace("type " + this.me);
-        // system.em = this.em;
-        // var system:T = Type.createInstance(systemClass, []);
-
-        // Reflect.setField(system, "em", em);
-        // Reflect.setField(system, "root", this);
-        // Reflect.setField(system, "enh", this);
-        // #if server
-        // Reflect.setField(system, "net", manager);
-        // #end
-        // trace("system enh " + system.enh);
-        // Reflect.callMethod(system, Reflect.field(system, "init"), []);
-
-        // return system;
-    // }
-
-    // public function addSystem<T:{root:Dynamic}>(systemClass:Class<T>):T
-    // {
-    //     var system:T = Type.createInstance(systemClass, []);
-
-    //     // Reflect.setField(system, "em", em);
-    //     Reflect.setField(system, "root", this);
-    //     // Reflect.setField(system, "enh", this);
-    //     #if server
-    //     Reflect.setField(system, "net", manager);
-    //     #end
-    //     // trace("system enh " + system.enh);
-    //     Reflect.callMethod(system, Reflect.field(system, "init"), []);
-
-    //     return system;
-    // }
-
-
 }
 

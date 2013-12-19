@@ -37,7 +37,7 @@ class RPCMacro
             case EMeta(rpc, link): // handle s 
                 if(rpc.name == "RPC")
                 {
-                    // trace("RPC FOUND !!! " + rpc);
+                    trace("RPC FOUND !!! " + rpc);
                     // trace("RPC FOUND link !!! " + link);
                     // trace("hep " + e);
                     rpcMetas.push(e);
@@ -111,8 +111,14 @@ class RPCMacro
                                         case "Int":
                                             trace("Type is Int");
                                             typeName = vartype;
+                                        case "Short":
+                                            trace("Type is Short");
+                                            typeName = vartype;
                                         case "String":
                                             trace("Type is String");
+                                            typeName = vartype;
+                                        case "Bool":
+                                            trace("Type is Bool");
                                             typeName = vartype;
                                         default:
                                             trace("Wrong type for RPC only Int & String are allowed");
@@ -236,6 +242,10 @@ class RPCMacro
                         serializationBlock.push( macro connections[socket].output.writeUTF($i{varName}) );
                     case "Int":
                         serializationBlock.push( macro connections[socket].output.writeInt($i{varName}) );
+                    case "Short":
+                        serializationBlock.push( macro connections[socket].output.writeShort($i{varName}) );
+                    case "Bool":
+                        serializationBlock.push( macro connections[socket].output.writeBoolean($i{varName}) );
                 }
                 #elseif client
                 switch(argTypeString)
@@ -244,6 +254,10 @@ class RPCMacro
                         serializationBlock.push( macro enh.socket.conn.output.writeUTF($i{varName}) );
                     case "Int":
                         serializationBlock.push( macro enh.socket.conn.output.writeInt($i{varName}) );
+                    case "Short":
+                        serializationBlock.push( macro enh.socket.conn.output.writeShort($i{varName}) );
+                    case "Bool":
+                        serializationBlock.push( macro enh.socket.conn.output.writeBoolean($i{varName}) );
                 }
                 #end
             }
@@ -254,7 +268,7 @@ class RPCMacro
             #elseif server
             // funcBlock.push(macro var allConn = Enh.em.getAllComponentsOfType(CConnexion));
             // funcBlock.push(macro for(conn in allConn) { $a{serializationBlock} } );
-            funcBlock.push( macro var connections = enh.socket.connections );
+            funcBlock.push( macro var connections = enh.socket.gameConnections );
             funcBlock.push( macro for(socket in connections.keys()) { $a{serializationBlock} } );
             #end
             // funcBlock.push( macro trace("rpc *sent*"));
@@ -349,7 +363,8 @@ class RPCMacro
     {
         for(f in fields)
         {
-            if(f.name.substr(0, 5) == "onNet")
+            // if(f.name.substr(0, 5) == "onNet")
+            if(f.name.substr(0, 2) == "on")
             {
                 // trace("PLOOM");
                 rpcsIn.set(f.name, EventMacro.getMetaTypes(f.name, fields));
@@ -439,8 +454,12 @@ class RPCMacro
                 {
                     case "Int":
                         e = macro input.readInt();
+                    case "Short":
+                        e = macro input.readShort();
                     case "String":
                         e = macro input.readUTF();
+                    case "Bool":
+                        e = macro input.readBoolean();
                     default:
                         throw "Types should be Int or String";
                 }
@@ -503,25 +522,53 @@ class RPCMacro
             if(!rpcs1n.exists(functionName))
                 if(host == CONST.SERVER)
                 {
-                throw "Client has no method " + functionName + " for the Server RPC";
+                    throw "Client has no method " + functionName + " for the Server RPC";
                 }
                 else if(host == CONST.CLIENT)
                 {
-                throw "Server has no method " + functionName + " for the Client RPC";
+                    throw "Server has no method " + functionName + " for the Client RPC";
                 }
 
             var argTypesIn = rpcs1n.get(functionName);
             var argTypesOut = rpcOut.argTypes;
 
-            if(argTypesOut.length != argTypesIn.length) throw "RPC arguments number mismatch";
+            if(argTypesOut.length != argTypesIn.length) throw "RPC arguments number mismatch for " + functionName + " hint out : " + argTypesOut + " / in : " + argTypesIn;
 
+
+            // TODO : CLEANUP
             for(i in 0...argTypesOut.length)
             {
                 if(argTypesOut[i][0] != argTypesIn[i][0])
-                    throw "RPC variable name mismatch : " + argTypesOut[i][0] + " != " + argTypesIn[i][0];
+                {
+                    if(argTypesOut[i][0] == "Int" && argTypesIn[i][0] == "Short" ||
+                       argTypesOut[i][0] == "Short" && argTypesIn[i][0] == "Int")
+                    {
+
+                    }
+                    else
+                    {
+                        throw "RPC variable name mismatch : " + argTypesOut[i][0] + " != " + argTypesIn[i][0] + " for " + rpcOut.name + " host " + host;
+                    }
+                }
 
                 if(argTypesOut[i][1] != argTypesIn[i][1])
-                    throw "RPC arg type mismatch: " + argTypesOut[i][1] + "!=" + argTypesIn[i][1];
+                {
+                    if(argTypesOut[i][1] == "Int" && argTypesIn[i][1] == "Short" ||
+                       argTypesOut[i][1] == "Short" && argTypesIn[i][1] == "Int")
+                    {
+                        
+                    }
+                    else
+                    {
+                        throw "RPC arg type mismatch: " + argTypesOut[i][1] + "!=" + argTypesIn[i][1] + " for " + rpcOut.name + " host " + host;
+                    }
+                }
+
+                // if(argTypesOut[i][0] != argTypesIn[i][0])
+                //     throw "RPC variable name mismatch : " + argTypesOut[i][0] + " != " + argTypesIn[i][0] + " for " + rpcOut.name + " host " + host;
+
+                // if(argTypesOut[i][1] != argTypesIn[i][1])
+                //     throw "RPC arg type mismatch: " + argTypesOut[i][1] + "!=" + argTypesIn[i][1] + " for " + rpcOut.name + " host " + host;
             }
 
         }

@@ -96,6 +96,10 @@ class EventMacro
                                             metaTypes.push([m.name, typeName]);
                                         case "Int":
                                             metaTypes.push([m.name, typeName]);
+                                        case "Short":
+                                            metaTypes.push([m.name, "Int"]);
+                                        case "Bool":
+                                            metaTypes.push([m.name, typeName]);
                                         default: throw "Type " + typeName + " not allowed";
                                     }
 
