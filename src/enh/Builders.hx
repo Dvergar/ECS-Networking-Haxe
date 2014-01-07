@@ -60,42 +60,26 @@ class EntityCreatowr
     public var syncedEntities:Array<Bool>;
     public var em:EntityManager;
 
-    // TO-DO : Refactor, specific methods are now useless
-    public function serializeCreate(componentType:Int,entity:String,ba:ByteArray):Void {
+    public function serialize(componentType:Int, entity:String, ba:ByteArray):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
         component.serialize(ba);
     }
-    public function serializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void {
-        var componentClass = untyped networkComponents[componentType];
-        var component = em.getComponent(entity, componentClass);
 
-        component.serialize(ba);
-    }
-    public function serializeDelete(componentType:Int,entity:String,ba:ByteArray):Void {
-        var componentClass = untyped networkComponents[componentType];
-        var component = em.getComponent(entity, componentClass);
-
-        component.serialize(ba);
-    }
-    public function unserializeCreate(componentType:Int,entity:String,ba:ByteArray):Void {
+    public function unserialize(componentType:Int, entity:String, ba:ByteArray):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
         component.unserialize(ba);
     }
-    public function unserializeUpdate(componentType:Int,entity:String,ba:ByteArray):Void {
-        var componentClass = untyped networkComponents[componentType];
-        var component = em.getComponent(entity, componentClass);
 
-        component.unserialize(ba);
-    }
-    public function unserializeDelete(componentType:Int,entity:String,ba:ByteArray):Void {
+    public function addComponent(componentType:Int, entity:String)
+    {
         var componentClass = untyped networkComponents[componentType];
-        var component = em.getComponent(entity, componentClass);
+        var component = Type.createInstance(componentClass, []);
 
-        component.unserialize(ba);
+        em.addComponent(entity, component);
     }
 
     public function new()
@@ -108,8 +92,6 @@ class EntityCreatowr
 
         syncedEntities = haxe.Unserializer.run(haxe.Resource.getString("syncedEntities"));
 
-        trace("componentsNameByEntityId " + componentsNameByEntityId);
-
         var componentsSerialized = haxe.Resource.getString("components");
         var components:Array<String> = haxe.Unserializer.run(componentsSerialized);
 
@@ -121,7 +103,9 @@ class EntityCreatowr
             // Why untyped ?
             networkComponents.push(untyped c);
         }
-        trace("networkComponents " + networkComponents);
+
+        trace("syncComponentsNameByEntityId " + syncComponentsNameByEntityId);
+        trace("componentsNameByEntityId " + componentsNameByEntityId);
     } 
 }
 
@@ -157,6 +141,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
     var rate:Float;
     var loopFunc:Void->Void;
 
+    // TODO : clean up this mess
     public function new(root:ROOTTYPE, entityCreatorType:Class<ECTYPE>)
     {
         this.root = root;

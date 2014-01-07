@@ -13,6 +13,7 @@ import flash.utils.ByteArray;
 
 // import enh.EntityManager;
 import enh.Builders;
+import enh.Timer;
 // import enh.ClientManager;
 
 import Common;
@@ -76,6 +77,7 @@ class DrawableSystem extends System<Client, EntityCreator>
 
 class Client extends Enh2<Client, EntityCreator>
 {
+    var pingTime:Float;
     public function new()
     {
         super(this, EntityCreator);
@@ -83,7 +85,8 @@ class Client extends Enh2<Client, EntityCreator>
 
     public function init()
     {
-        connect("192.168.1.2", 32000);
+        this.pingTime = Timer.getTime();
+        connect("192.168.1.4", 32000);
 
         @addSystem DrawableSystem;
         @addSystem InputSystem;
@@ -100,6 +103,12 @@ class Client extends Enh2<Client, EntityCreator>
     private function onNetActionLol(entity:String, ev:Dynamic)
     {
         trace("onNetActionLol");
+
+        var allPepitos = em.getEntitiesWithComponent(CPepito);
+        for(entity in allPepitos)
+        {
+            trace("PEPITO !");
+        }
     }
 
     private function onConnection(entity:String, ev:Dynamic)
@@ -113,5 +122,11 @@ class Client extends Enh2<Client, EntityCreator>
     private function loop()
     {
         drawableSystem.processEntities();
+
+        if(Timer.getTime() - pingTime > 1)
+        {
+            @RPC("PING") {};
+            pingTime = Timer.getTime();
+        }
     }
 }

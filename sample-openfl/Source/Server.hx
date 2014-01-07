@@ -33,12 +33,15 @@ class Server extends Enh2<Server, EntityCreator>
         this.startServer("", 32000);
 
         @addSystem MouseMovementSystem;
+        @registerListener "PING";
 
         this.em.registerListener("CONNECTION", onConnection);
         this.em.registerListener("NET_HELLO", onNetHello);
 
         this.startLoop(loop, 1/60);
     }
+
+    function onPing(entity:String, ev:Dynamic) {}
 
     @msg('String')
     private function onNetHello(entity:String, ev:Dynamic)
@@ -51,6 +54,7 @@ class Server extends Enh2<Server, EntityCreator>
         net.sendWorldStateTo(connectionEntity);
 
         var mouseEntity = net.createNetworkEntity("mouse", connectionEntity, [100, 100]);
+        net.addComponent(mouseEntity, new CPepito());
         net.setConnectionEntityFromTo(connectionEntity, mouseEntity);
 
         trace("onConnection " + connectionEntity);

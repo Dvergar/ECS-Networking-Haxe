@@ -26,7 +26,7 @@ class ServerManager
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
-    private var ids:IdManager;
+    // private var ids:IdManager;
     private var netEntityByEntity:Map<String, NetEntity>;
     private var syncingEntities:Array<NetEntity>;
     // private var entityIdByConnectionEntity:Map<String, Int>;
@@ -38,7 +38,7 @@ class ServerManager
         this.netEntityByEntity = new Map();
         // this.entityIdByConnectionEntity = new Map();
         this.syncingEntities = new Array();
-        this.ids = new IdManager(500);
+        // this.ids = new IdManager(500);
 
         this.enh = enh;
         this.em = enh.em;
@@ -84,6 +84,22 @@ class ServerManager
         connectionsByEntity[newConnectionEntity] = conn;
     }
 
+    public function addComponent<T:{var _id:Int;}>(entity:String, component:T):T
+    {
+        var c = em.addComponent(entity, component);
+        var c2 = cast component;
+
+        for(conn in connectionsByEntity)
+        {
+            conn.output.writeByte(CONST.ADD_COMPONENT);
+            conn.output.writeShort(em.getIdFromEntity(entity));
+            conn.output.writeShort(c._id);
+            // ec.serialize(c._id, entity, conn.output);
+        }
+
+        return component;
+    }
+
     public function createNetworkEntity(entityType:String, ?owner:String, ?args:Array<Int>):String
     {
         if(args == null) args = new Array();
@@ -94,7 +110,8 @@ class ServerManager
 
         var netEntity = new NetEntity();
         netEntity.entity = entity;
-        netEntity.id = ids.get();
+        netEntity.id = em.setId(entity);
+        // netEntity.id = ids.get();
         netEntity.typeName = entityType;
         netEntity.typeId = entityTypeId;
         netEntity.owner = owner;
@@ -145,7 +162,7 @@ class ServerManager
 
         for(compId in ec.componentsNameByEntityId[netEntity.typeId])
         {
-            ec.serializeCreate(compId, netEntity.entity, output);
+            ec.serialize(compId, netEntity.entity, output);
         }
     }
 
@@ -164,7 +181,7 @@ class ServerManager
             for(compId in ec.componentsNameByEntityId[netEntity.typeId])
             {
                 trace("comp update id " + compId);
-                ec.serializeUpdate(compId, netEntity.entity, output);
+                ec.serialize(compId, netEntity.entity, output);
             }
         }
     }
@@ -181,7 +198,7 @@ class ServerManager
 
             for(compId in ec.componentsNameByEntityId[netEntity.typeId])
             {
-                ec.serializeUpdate(compId, netEntity.entity, output);            
+                ec.serialize(compId, netEntity.entity, output);            
             }
         }
     }

@@ -89,24 +89,28 @@ class EntityManager
     // COMPONENTS
     //////////////
 
-    public function assignId(entity:String):Int
+    public function getId():Int
     {
-        var id = ids++;
+        return ids++;
+    }
+
+    public function setId(entity:String, ?id:Int):Int
+    {
+        if(id == null)
+        {
+            id = ids++;
+        }
         entitiesById.set(id, entity);
         addComponent(entity, new CId(id));
+
         return id;
     }
 
-    // Switch argument order
-    public function setId(id:Int, entity:String)
+    public function getEntityFromId(id:Int):String
     {
-        entitiesById.set(id, entity);
-        addComponent(entity, new CId(id));
-    }
-
-    public function getEntityWithId(id:Int):String
-    {
-        return entitiesById.get(id);
+        var entity = entitiesById.get(id);
+        // if(entity == null) throw("no entity with id " + id);
+        return entity;
     }
 
     public function getIdFromEntity(entity:String):Int
@@ -116,6 +120,7 @@ class EntityManager
 
     public function addComponent<T>(entity:String, component:T):T
     {
+        if(entity == null) throw "Entity can't be null";
         var className = Type.getClassName(Type.getClass(component));
         var store:Map<String, Component> = componentStores.get(className);
 
@@ -218,7 +223,6 @@ class EntityManager
     public function killEntityNow(entity:String)
     {
         // trace("killEntityNow " + entity);
-
         // IDS
         if(hasComponent(entity, CId))
         {

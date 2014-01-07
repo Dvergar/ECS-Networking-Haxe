@@ -216,6 +216,7 @@ class RPCMacro
             serializationBlock.push(macro connections[socket].output.writeByte($v{rpcId}));
             #elseif client
             // A longer path maybe ? Refactor dat shit
+            // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
             serializationBlock.push(macro enh.socket.conn.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro enh.socket.conn.output.writeByte($v{rpcId}));
             #end

@@ -9,7 +9,7 @@ import Client;
 import enh.ByteArray;
 
 
-@networked @sync
+@networked
 class CPosition extends Component
 {
     @short public var x:Int;
@@ -33,14 +33,18 @@ class CComponentTest extends Component
 }
 
 
+@networked
+class CPepito extends Component
+{
+    public function new() {super();}
+}
+
 
 class EntityCreator extends EntityCreatowr
 {
-    public function new() {
-        super();
-    }
+    public function new() {super();}
 
-    @freeze
+    @networked
     public function mouse(args:Array<Int>):String
     {
         trace("Mouse spawn at : " + args);
@@ -51,7 +55,8 @@ class EntityCreator extends EntityCreatowr
         trace("mouse");
         var player = em.createEntity();
         em.addComponent(player, new CPosition(100, 100));
-        em.addComponent(player, new CComponentTest());
+        // em.addComponent(player, new CComponentTest());
+        @sync var wat = em.addComponent(player, new CComponentTest());
 
         #if client
         var shape = new Shape();

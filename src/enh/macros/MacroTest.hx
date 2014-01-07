@@ -34,18 +34,9 @@ class MacroTest
         return entityIds;
     }
 
-    public static function findMetas(e:Expr) { 
-        switch(e.expr) { 
-            case EMeta(a, meta): // handle s 
-                trace("META FOUND !!! " + meta);
-            case _: haxe.macro.ExprTools.iter(e, findMetas); 
-        }
-    }
-
     macro static public function buildMap():Array<haxe.macro.Field>
     {
         // trace("############# buildMap #############");
-
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
         var pos = Context.currentPos();
@@ -54,112 +45,69 @@ class MacroTest
         fields = RPCMacro._processRPCs(fields);
 
         // GRAB DATAS AND FEED ARRAYS (TODO : pattern matching !!!)
-        var entitiesMethodsById = [];
-        var entitiesComponentMap = [];
+        var entitiesMethodsById:Array<String> = [];
+        var entitiesComponentMap:Array<Array<String>> = [];  // type id to be explicit
 
         for (f in fields)
         {
-            // trace("#########");
-            // trace(f);
-
             if(f.meta.length != 0)
             {
                 for(m in f.meta)
                 {
-                    // trace("metanames "  + m.name);
-                    if(m.name == "loltest")
-                    {
-                        // trace("LOLTEST " + f);
-
-                        switch(f.kind){
-                            case FFun(fun):
-                                findMetas(fun.expr);
-                            default:
-                        }
-                    }
-
-                    if(m.name == "freeze")
+                    if(m.name == "networked")
                     {
                         // trace("METHOD " + f.name);
                         var methodName = f.name;
 
                         getEntityId();
                         entitiesMethodsById.push(methodName);
-                        var componentsList = [];
+
+                        trace("\n\nTESTOR\n\n");
 
                         switch(f.kind)
                         {
                             case FFun(fun):
-                                switch(fun.expr.expr)
+                                trace("fun " + fun);
+
+                                var components:Array<String> = [];
+
+                                // ALL COMPONENTS
+                                function findComponent(e:Expr)
                                 {
-                                    case EBlock(block):
-                                        for(b in block)
-                                        {    
-                                            switch(b.expr)
-                                            {
-                                                case EVars(vars):
+                                    switch(e.expr) { 
+                                        case ECall({expr:EField(_, "addComponent")},
+                                                   [_, {expr:ENew(comp, _)}]):
+                                            components.push(comp.name);
 
-                                                    var entity = vars[0].name;
-
-                                                    switch(vars[0].expr.expr)
-                                                    {
-                                                        case ECall(call, dummy):
-                                                            // trace(call);
-                                                            switch(call.expr)
-                                                            {
-                                                                case EField(dummy, field):
-                                                                    // trace("entity : " + entity);
-                                                                    var createEntity = field == "createEntity";
-                                                                    // trace("create entity ? " + createEntity);
-                                                                default:
-                                                            }
-                                                        default:
-                                                    }
-                                                case ECall(call, dummy):
-                                                    // trace("kall " + call);
-                                                    switch(call.expr)
-                                                    {
-                                                        case EField(c, field):
-                                                            // trace("methodd : " + field);
-                                                            if(field == "addComponent")
-                                                            {
-                                                                // trace("dummyy " + dummy);
-                                                                switch(dummy[0].expr)
-                                                                {
-                                                                    case EConst(identity):
-                                                                        switch(identity)
-                                                                        {
-                                                                            case CIdent(entity):
-                                                                                // trace("component entity : " + entity);
-                                                                            default:
-                                                                        }
-                                                                    default:
-                                                                }
-                                                                switch(dummy[1].expr)
-                                                                {
-                                                                    case ENew(n, a):
-                                                                        var component = n.name;
-                                                                        // trace("compcomp :" + component);
-
-                                                                        componentsList.push(component);
-                                                                        // assignedComponents.set(component);
-
-                                                                    default:
-                                                                }
-
-                                                            }
-                                                        default:
-                                                    }
-
-
-                                                default:
-                                            }
-                                        }
-                                    default:
+                                        case _: haxe.macro.ExprTools.iter(e, findComponent); 
+                                    }
                                 }
+
+                                findComponent(fun.expr);
+                                entitiesComponentMap.push(components);
+                                trace("entitiesComponentMap " + entitiesComponentMap);
+
+                                // SYNC COMPONENTS
+                                components = [];
+
+                                function findSyncComponent(e:Expr) { 
+                                    switch(e.expr) { 
+                                        case EMeta(a, b):
+                                            findComponent(e);
+
+                                        case _: haxe.macro.ExprTools.iter(e, findSyncComponent); 
+                                    }
+                                }
+
+                                findSyncComponent(fun.expr);
+                                syncedComponents = components;
+                                trace("synccomponents " + components);
+
                             default:
                         }
-                        entitiesComponentMap.push(componentsList);
+
+
+                        trace("\n\n#######\n\n");
                     }
                 }
             }
@@ -228,7 +176,7 @@ class MacroTest
             var syncComponentsNameByEntityId = [];
 
             var entityId = 0;
-            for(entityType in entitiesComponentMap)
+            for(components in entitiesComponentMap)
             {
                 var comps = [];
                 var syncComps = [];
@@ -237,7 +185,7 @@ class MacroTest
                 syncComponentsNameByEntityId.push(syncComps);
 
                 var syncedEntity = false;
-                for(component in entityType)
+                for(component in components)
                 {
                     var netComponent = false;
                     for(networkComponent in networkComponents)
@@ -249,8 +197,8 @@ class MacroTest
                         }
                     }
 
-                    if(!netComponent) continue;
 
+                    if(!netComponent) continue;
                     var componentId = componentIdByString.get(component);
                     comps.push(componentId);
 
@@ -296,30 +244,26 @@ class MacroTest
         var componentName = cls.name;
 
         var networked = false;
-        var sync = false;
+        // var sync = false;
         for(meta in Context.getLocalClass().get().meta.get())
         {
-            if(meta.name == "sync") sync = true;
             if(meta.name == "networked") networked = true;
         }
 
         if(!networked) return fields;
-        if(sync) syncedComponents.push(componentName);
 
 
         var varTypeByVarName:Map<String, String> = new Map();
 
         for(f in fields)
         {
-            // trace("meta " + f.meta);
-
             if(f.meta.length != 0)
             {
-
                 // NET TYPES (can't be above because typemeta related to msgtypesmetas)
                 for(m in f.meta)
                 {
                     if(m.name == "short" ||
+                       m.name == "int" ||
                        m.name == "byte")
                     {
                         // trace("added " + m.name + " / " + f.name);
@@ -327,6 +271,15 @@ class MacroTest
                     }
                 }
             }
+            // switch(f.kind){
+            //     case FVar(TPath(varType), expr2):
+            //         if(varType.name == "Short" ||
+            //            varType.name == "Int")
+            //         {
+            //             varTypeByVarName[f.name] = varType.name;
+            //         }
+            //     default:
+            // }
         }
 
         trace("pre varTypeByVarName : " + varTypeByVarName);
@@ -337,6 +290,9 @@ class MacroTest
         networkComponents[id] = componentName;
         componentsById.push(cls.name);
         componentIdByString.set(cls.name, id);
+
+        // ADDS id to component object
+        fields.push({ kind : FVar(TPath({ name : "Int", pack : [], params : [] }), { expr : EConst(CInt(Std.string(id))), pos : pos }), meta : [], name : "_id", doc : null, pos : pos, access : [APublic] });
 
         if(Lambda.empty(varTypeByVarName)) return fields;
 
@@ -373,6 +329,14 @@ class MacroTest
                     // #end
                     eout = macro ba.writeShort($i{varName});
                     debugOutShort = macro trace("serialize : " + $i{varName});
+
+                case "int":
+                    ein  = macro $i{varName} = ba.readInt();
+                    eout = macro ba.writeInt($i{varName});
+
+                case "byte":
+                    ein  = macro $i{varName} = ba.readByte();
+                    eout = macro ba.writeByte($i{varName});
             }
 
             trace("ein " + ein);
