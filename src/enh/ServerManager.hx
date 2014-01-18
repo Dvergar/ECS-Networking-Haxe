@@ -31,6 +31,7 @@ class ServerManager
     private var syncingEntities:Array<NetEntity>;
     // private var entityIdByConnectionEntity:Map<String, Int>;
     public var connectionsByEntity:Map<String, Connection>;
+    public var connections(get, never):Int;
 
     public function new(enh:Enh)
     {
@@ -47,6 +48,12 @@ class ServerManager
         trace("functionByEntityType1 " + ec.functionByEntityType);
     }
 
+    // BAAAAAAD
+    public function get_connections():Int
+    {
+        return Lambda.count(connectionsByEntity);
+    }
+
     public function sendWorldStateTo(connectionEntity:String)
     {
         var conn = connectionsByEntity[connectionEntity];
@@ -57,18 +64,24 @@ class ServerManager
         }
     }
 
-    public function disconnectEntity(entity:String)
-    {
-        
-    }
-
     public function connect(conn:Connection)
     {
 
     }
 
-    public function disconnect(conn:Connection)
+    // FIX : Too much back&forth
+    public function disconnect(connectionEntity:String)
     {
+        trace("sm disconnect");
+        var conn = connectionsByEntity.get(connectionEntity);
+        var s = socket.getSocketFromConnection(conn);
+        socket.disconnect(conn, s);
+        _disconnect(conn);
+    }
+
+    public function _disconnect(conn:Connection)
+    {
+        trace("sm _disconnect");
         em.pushEvent("DISCONNECTION", conn.entity, {});
         var entity = conn.entity;
         connectionsByEntity.remove(entity);

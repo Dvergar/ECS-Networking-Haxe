@@ -4,6 +4,8 @@ import enh.Builders;
 
 import flash.events.Event;
 import flash.events.ProgressEvent;
+import flash.events.IOErrorEvent;
+import flash.events.SecurityErrorEvent;
 
 
 class Socket extends SocketHelper implements ISocketClient
@@ -20,7 +22,10 @@ class Socket extends SocketHelper implements ISocketClient
 
 		em = enh.em;
         socket = new flash.net.Socket();
-		socket.addEventListener(Event.CONNECT, onConnect);
+        socket.addEventListener(Event.CONNECT, onConnect);
+        socket.addEventListener(Event.CLOSE, onClose);
+        socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecError);
+        socket.addEventListener(IOErrorEvent.IO_ERROR, onError);
 	}
 
 	private function onConnect(ev:Event)
@@ -29,6 +34,23 @@ class Socket extends SocketHelper implements ISocketClient
 		conn = new Connection();
 		connected = true;
 	}
+
+
+    private function onClose(ev:Event)
+    {
+        trace("flash : onClose");
+        em.pushEvent("DISCONNECTION", "", {});
+    }
+
+    private function onError(event:Event)
+    {
+        trace("flash : onError");
+    }
+
+    private function onSecError(event:Event)
+    {
+        trace("flash : onSecError");
+    }
 
 	public function connect(ip:String, port:Int)
 	{

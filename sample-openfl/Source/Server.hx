@@ -39,6 +39,7 @@ class Server extends Enh2<Server, EntityCreator>
         this.em.registerListener("NET_HELLO", onNetHello);
 
         this.startLoop(loop, 1/60);
+
     }
 
     function onPing(entity:String, ev:Dynamic) {}
@@ -46,7 +47,7 @@ class Server extends Enh2<Server, EntityCreator>
     @msg('String')
     private function onNetHello(entity:String, ev:Dynamic)
     {
-        trace("onNetHello");
+        trace("onNetHellod");
     }
 
     private function onConnection(connectionEntity:String, ev:Dynamic)

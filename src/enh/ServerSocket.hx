@@ -145,10 +145,31 @@ class ServerSocket extends SocketHelper
         }
     }
 
-    function disconnect(conn:Connection, socket:sys.net.Socket)
+    // Ugly but don't really care (only for disconnection)
+    public function getSocketFromConnection(conn:Connection):sys.net.Socket
+    {
+        var s:sys.net.Socket = sockets[0]; // I KNOW !!!
+        
+        for(socket in connections.keys())
+        {
+            var connection = connections[socket];
+            if(conn == connection)
+            {
+                s = socket;
+                break;
+            }
+        }
+
+        return s;
+    }
+
+    // A bit too much :3
+    public function disconnect(conn:Connection, socket:sys.net.Socket)
     {
         trace("disconnect " + conn.entity);
-        enh.manager.disconnect(conn);
+        enh.manager._disconnect(conn);
+        socket.shutdown(true, true);
+        socket.close();
         sockets.remove(socket);
         connections.remove(socket);
         gameConnections.remove(socket);
