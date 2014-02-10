@@ -12,7 +12,7 @@ class MouseMovementSystem extends System<Server, EntityCreator>
     }
 
     @x('Int') @y('Int')
-    public function onNetMousePosition(entity:String, event:Dynamic)
+    public function onNetMousePosition(entity:Entity, event:Dynamic)
     {
         var pos = em.getComponent(entity, CPosition);
         pos.x = event.x;
@@ -42,15 +42,15 @@ class Server extends Enh2<Server, EntityCreator>
 
     }
 
-    function onPing(entity:String, ev:Dynamic) {}
+    function onPing(entity:Entity, ev:Dynamic) {}
 
     @msg('String')
-    private function onNetHello(entity:String, ev:Dynamic)
+    private function onNetHello(entity:Entity, ev:Dynamic)
     {
         trace("onNetHellod");
     }
 
-    private function onConnection(connectionEntity:String, ev:Dynamic)
+    private function onConnection(connectionEntity:Entity, ev:Dynamic)
     {
         net.sendWorldStateTo(connectionEntity);
 

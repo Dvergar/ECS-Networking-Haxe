@@ -45,7 +45,7 @@ class EntityCreator extends EntityCreatowr
     public function new() {super();}
 
     @networked
-    public function mouse(args:Array<Int>):String
+    public function mouse(args:Array<Int>):Entity
     {
         trace("Mouse spawn at : " + args);
 
