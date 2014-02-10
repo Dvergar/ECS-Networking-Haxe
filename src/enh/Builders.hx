@@ -1,6 +1,6 @@
 package enh;
 
-typedef Entity = String;
+typedef Entity = Int;
 typedef Short = Int;
 
 @:autoBuild(enh.macros.MacroTest.buildComponent())
@@ -53,28 +53,28 @@ class EntityCreatowr
     // TO-DO : God, refactor this mess with typedefs or something :'(
     public var entityTypeIdByEntityTypeName:Map<String, Int>;
     public var entityTypeNameById:Map<Int, String>;
-    public var functionByEntityType:Map<String, Array<Int>->String>;
+    public var functionByEntityType:Map<String, Array<Int>->Entity>;
     public var componentsNameByEntityId:Array<Array<Int>>; // ComponentName ? Component Id !
     public var syncComponentsNameByEntityId:Array<Array<Int>>;
     public var networkComponents:Array<Component>;
     public var syncedEntities:Array<Bool>;
     public var em:EntityManager;
 
-    public function serialize(componentType:Int, entity:String, ba:ByteArray):Void {
+    public function serialize(componentType:Int, entity:Entity, ba:ByteArray):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
         component.serialize(ba);
     }
 
-    public function unserialize(componentType:Int, entity:String, ba:ByteArray):Void {
+    public function unserialize(componentType:Int, entity:Entity, ba:ByteArray):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
         component.unserialize(ba);
     }
 
-    public function addComponent(componentType:Int, entity:String)
+    public function addComponent(componentType:Int, entity:Entity)
     {
         var componentClass = untyped networkComponents[componentType];
         var component = Type.createInstance(componentClass, []);

@@ -11,7 +11,7 @@ class ClientManager
     private var em:EntityManager;
     private var ec:EntityCreatowr;
     // private var entitiesById:Map<Int, String>;
-    private var me:String;
+    private var me:Entity;
     public static var myId:Int; // Workaround LD48
 
     public function new(enh:Enh)
@@ -169,7 +169,7 @@ class ClientManager
         if(msgType == CONST.RPC)
         {
             // trace("RPC received");
-            unserializeRpc(ba, "dummy");
+            unserializeRpc(ba, -1);
         }
     }
 }

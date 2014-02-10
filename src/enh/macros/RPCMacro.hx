@@ -473,7 +473,7 @@ class RPCMacro
             #if server
             var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro entity, obj];
             #elseif client
-            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro "dummy", obj];
+            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro -1, obj];
             #end
             // var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, { expr : EConst(CString("dummy")), pos : pos }, obj];
 
@@ -490,7 +490,7 @@ class RPCMacro
 
         block.push(switchExpr);
 
-        var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }, { name:"entity", type:TPath({ name:"String", pack:[], params:[] }), opt:false, value:null }];
+        var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }, { name:"entity", type:TPath({ name:"Entity", pack:[], params:[] }), opt:false, value:null }];
         var funcExpr = { kind:FFun({ args:funcArgs, expr:{ expr:EBlock(block), pos:pos }, params:[], ret:null }), meta:[], name:"unserializeRpc", doc:null, pos:pos, access:[APublic] };
 
         fields.push(funcExpr);

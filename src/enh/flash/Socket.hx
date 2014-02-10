@@ -39,7 +39,7 @@ class Socket extends SocketHelper implements ISocketClient
     private function onClose(ev:Event)
     {
         trace("flash : onClose");
-        em.pushEvent("DISCONNECTION", "", {});
+        em.pushEvent("DISCONNECTION", -1, {});
     }
 
     private function onError(event:Event)

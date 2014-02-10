@@ -7,11 +7,11 @@ import enh.Tools;
 
 class NetEntity
 {
-    public var entity:String;
+    public var entity:Entity;
     public var id:Int;
     public var typeName:String;
     public var typeId:Int;
-    public var owner:Null<String>;
+    public var owner:Null<Entity>;
     public var ownerId:Null<Int>;
     public var args:Null<Array<Int>>;
     public var event:Bool;
@@ -28,10 +28,10 @@ class ServerManager
     private var em:EntityManager;
     private var ec:EntityCreatowr;
     // private var ids:IdManager;
-    private var netEntityByEntity:Map<String, NetEntity>;
+    private var netEntityByEntity:Map<Entity, NetEntity>;
     private var syncingEntities:Array<NetEntity>;
     // private var entityIdByConnectionEntity:Map<String, Int>;
-    public var connectionsByEntity:Map<String, Connection>;
+    public var connectionsByEntity:Map<Entity, Connection>;
     public var connections(get, never):Int;
 
     public function new(enh:Enh)
@@ -55,7 +55,7 @@ class ServerManager
         return Lambda.count(connectionsByEntity);
     }
 
-    public function sendWorldStateTo(connectionEntity:String)
+    public function sendWorldStateTo(connectionEntity:Entity)
     {
         var conn = connectionsByEntity[connectionEntity];
 
@@ -71,7 +71,7 @@ class ServerManager
     }
 
     // FIX : Too much back&forth
-    public function disconnect(connectionEntity:String)
+    public function disconnect(connectionEntity:Entity)
     {
         trace("sm disconnect");
         var conn = connectionsByEntity.get(connectionEntity);
@@ -88,8 +88,8 @@ class ServerManager
         connectionsByEntity.remove(entity);
     }
 
-    public function setConnectionEntityFromTo(connectionEntity:String,
-                                              newConnectionEntity:String)
+    public function setConnectionEntityFromTo(connectionEntity:Entity,
+                                              newConnectionEntity:Entity)
     {
         var conn = connectionsByEntity[connectionEntity];
         conn.entity = newConnectionEntity;
@@ -98,7 +98,7 @@ class ServerManager
         connectionsByEntity[newConnectionEntity] = conn;
     }
 
-    public function addComponent<T:{var _id:Int;}>(entity:String, component:T):T
+    public function addComponent<T:{var _id:Int;}>(entity:Entity, component:T):T
     {
         var c = em.addComponent(entity, component);
         var c2 = cast component;
@@ -115,9 +115,9 @@ class ServerManager
     }
 
     public function createNetworkEntity(entityType:String,
-                                        ?owner:String,
+                                        ?owner:Entity,
                                         ?args:Array<Int>,
-                                        ?event:Bool):String
+                                        ?event:Bool):Entity
     {
         if(args == null) args = new Array();
 
@@ -185,7 +185,7 @@ class ServerManager
         }
     }
 
-    public function updateNetworkEntity(entity:String)
+    public function updateNetworkEntity(entity:Entity)
     {
         var netEntity = netEntityByEntity[entity];
 
