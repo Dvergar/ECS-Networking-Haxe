@@ -7,6 +7,7 @@ import haxe.macro.Context;
 class EventMacro
 {    
     public static var eventsName2expr:Map<String, Expr> = new Map();
+    public static var eventsProcessed:Array<String> = new Array();
 
     public static inline function toUpperCaseFirst(value:String):String
     {
@@ -179,7 +180,19 @@ class EventMacro
                 )
             });
 
-
+        function eventProcessed(ev:String):Bool
+        {
+            var alreadyProcessed = false;
+            for(eventProcessed in eventsProcessed)
+            {
+                if(ev == eventProcessed)
+                {
+                    alreadyProcessed = true;
+                    break;
+                }
+            }
+            return alreadyProcessed;
+        }
 
         // GET FUNCTION EVENTS
         var funcEventNames = [];
@@ -196,7 +209,10 @@ class EventMacro
 
         for(funcEventName in funcEventNames)
         {
+            // CHECK IF EVENT ALREADY TYPEDEFED
+            if(eventProcessed(funcEventName)) continue;
 
+            // TYPEDEF
             addTypeToMethod(funcEventName, fields);
 
             var metaTypes = getMetaTypes(funcEventName, fields);
@@ -212,6 +228,8 @@ class EventMacro
 
             // MAKE TYPEDEF
             declare(funcEventName.substr(2), typedefFields);
+
+            eventsProcessed.push(funcEventName);
         }
     }
 

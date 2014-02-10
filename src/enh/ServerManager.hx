@@ -14,6 +14,7 @@ class NetEntity
     public var owner:Null<String>;
     public var ownerId:Null<Int>;
     public var args:Null<Array<Int>>;
+    public var event:Bool;
 
     public function new(){};
 }
@@ -113,7 +114,10 @@ class ServerManager
         return component;
     }
 
-    public function createNetworkEntity(entityType:String, ?owner:String, ?args:Array<Int>):String
+    public function createNetworkEntity(entityType:String,
+                                        ?owner:String,
+                                        ?args:Array<Int>,
+                                        ?event:Bool):String
     {
         if(args == null) args = new Array();
 
@@ -130,6 +134,7 @@ class ServerManager
         netEntity.owner = owner;
         netEntity.ownerId = conn.id;
         netEntity.args = args;
+        netEntity.event = event;
 
         netEntityByEntity[entity] = netEntity;
 
@@ -172,6 +177,7 @@ class ServerManager
 
         output.writeShort(netEntity.typeId);
         output.writeShort(netEntity.id);
+        output.writeBoolean(netEntity.event);
 
         for(compId in ec.componentsNameByEntityId[netEntity.typeId])
         {

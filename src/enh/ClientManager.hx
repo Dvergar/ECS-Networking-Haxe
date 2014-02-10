@@ -24,7 +24,6 @@ class ClientManager
 
     public function processDatas(conn:Connection)
     {
-        // trace("paf");
         var ba = conn.input;
         var msgType = ba.readByte();
 
@@ -39,10 +38,13 @@ class ClientManager
 
             em.pushEvent("CONNECTION", me, {});
         }
-        // trace("oop");
 
-        if(msgType == CONST.CREATE)
+        if(msgType == CONST.CREATE || msgType == CONST.CREATE_OWNED)
         {
+            var ownerId = -1;  // UGLY TO FIX YES OK OK
+            if(msgType == CONST.CREATE_OWNED)
+                ownerId = ba.readByte();
+
             var argsLength = ba.readByte();
             var args:Array<Int> = [];
             if(argsLength > 0)
@@ -55,12 +57,22 @@ class ClientManager
 
             var entityTypeId = ba.readShort();
             var entityId = ba.readShort();
+            var event = ba.readBoolean();
+
+
             trace("create entity uuid " + entityId);
 
             var entityTypeName = ec.entityTypeNameById[entityTypeId];
             var entity = enh.ec.functionByEntityType[entityTypeName](args);
+            em.setId(entity, entityId);
             trace("entity created " + entity);
 
+            if(msgType == CONST.CREATE_OWNED)
+                em.addComponent(entity, new CNetOwner(ownerId));
+
+            if(event)
+                em.pushEvent(entityTypeName.toUpperCase() + "_CREATE", entity, {id:ownerId});
+
             for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
             {
                 enh.ec.unserialize(compId, entity, ba);
@@ -68,45 +80,44 @@ class ClientManager
 
             trace("comps " + em.debugGetComponentsStringOfEntity(entity));
 
-            em.setId(entity, entityId);
             // entitiesById[entityUUID] = entity;
         }
 
-        if(msgType == CONST.CREATE_OWNED)
-        {
-            var ownerId = ba.readByte();
+        // if(msgType == CONST.CREATE_OWNED)
+        // {
+        //     var ownerId = ba.readByte();
             
-            var argsLength = ba.readByte();
-            trace("argsLength " + argsLength);
-            var args:Array<Int> = [];
-            if(argsLength > 0)
-            {
-                for(i in 0...argsLength)
-                {
-                    args.push(ba.readShort());
-                }
-            }
-            trace("args " + args);
+        //     var argsLength = ba.readByte();
+        //     trace("argsLength " + argsLength);
+        //     var args:Array<Int> = [];
+        //     if(argsLength > 0)
+        //     {
+        //         for(i in 0...argsLength)
+        //         {
+        //             args.push(ba.readShort());
+        //         }
+        //     }
+        //     trace("args " + args);
 
-            var entityTypeId = ba.readShort();
-            var entityId = ba.readShort();
-            trace("create owned entity uuid " + entityId);
+        //     var entityTypeId = ba.readShort();
+        //     var entityId = ba.readShort();
+        //     trace("create owned entity uuid " + entityId);
 
-            var entityTypeName = ec.entityTypeNameById[entityTypeId];
-            var entity = enh.ec.functionByEntityType[entityTypeName](args);
-            em.addComponent(entity, new CNetOwner(ownerId));
-            trace("entity owned created " + entity);
+        //     var entityTypeName = ec.entityTypeNameById[entityTypeId];
+        //     var entity = enh.ec.functionByEntityType[entityTypeName](args);
+        //     em.addComponent(entity, new CNetOwner(ownerId));
+        //     trace("entity owned created " + entity);
 
-            for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
-            {
-                enh.ec.unserialize(compId, entity, ba);
-            }
+        //     for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
+        //     {
+        //         enh.ec.unserialize(compId, entity, ba);
+        //     }
 
-            trace("comps " + em.debugGetComponentsStringOfEntity(entity));
+        //     trace("comps " + em.debugGetComponentsStringOfEntity(entity));
 
-            // entitiesById[entityUUID] = entity;
-            em.setId(entity, entityId);
-        }
+        //     // entitiesById[entityUUID] = entity;
+        //     em.setId(entity, entityId);
+        // }
 
 
         if(msgType == CONST.UPDATE)

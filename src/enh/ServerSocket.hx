@@ -167,11 +167,12 @@ class ServerSocket extends SocketHelper
     public function disconnect(conn:Connection, socket:sys.net.Socket)
     {
         trace("disconnect " + conn.entity);
+        connections.remove(socket);
         enh.manager._disconnect(conn);
         socket.shutdown(true, true);
         socket.close();
         sockets.remove(socket);
-        connections.remove(socket);
+        // connections.remove(socket);
         gameConnections.remove(socket);
         waitingSockets.remove(conn);
     }
