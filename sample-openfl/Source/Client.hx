@@ -11,10 +11,9 @@ import flash.events.SecurityErrorEvent;
 import flash.events.ProgressEvent;
 import flash.utils.ByteArray;
 
-// import enh.EntityManager;
 import enh.Builders;
 import enh.Timer;
-// import enh.ClientManager;
+import enh.Constants;
 
 import Common;
 
@@ -49,16 +48,17 @@ class InputSystem extends System<Client, EntityCreator>
 
     private function onMouseMove(event:MouseEvent)
     {
-        @RPC("NET_MOUSE_POSITION", Std.int(event.stageX), Std.int(event.stageY)) {x:Int, y:Int};
+        @RPC("NET_MOUSE_POSITION", Client.myEntity,
+                                   Std.int(event.stageX),
+                                   Std.int(event.stageY))
+                                           {x:Int, y:Int};
     }
 }
 
 
 class DrawableSystem extends System<Client, EntityCreator>
 {
-    public function init()
-    {
-    }
+    public function init() {}
 
     public function processEntities()
     {
@@ -78,6 +78,8 @@ class DrawableSystem extends System<Client, EntityCreator>
 class Client extends Enh2<Client, EntityCreator>
 {
     var pingTime:Float;
+    public static var myEntity:Entity = -1;
+
     public function new()
     {
         super(this, EntityCreator);
@@ -91,31 +93,34 @@ class Client extends Enh2<Client, EntityCreator>
         @addSystem DrawableSystem;
         @addSystem InputSystem;
 
-        @registerListener "NET_ACTION_LOL";
+        @registerListener "HI";
         @registerListener "CONNECTION";
-
-        // this.em.registerListener("CONNECTION", onConnection);
+        @registerListener "SQUARE_CREATE";
 
         startLoop(loop, 1/60);
     }
 
-    @hp('Int') @msg('String')
-    private function onNetActionLol(entity:String, ev:Dynamic)
+    private function onSquareCreate(entity:Entity, ev:Dynamic)
     {
-        trace("onNetActionLol");
-
-        var allPepitos = em.getEntitiesWithComponent(CPepito);
-        for(entity in allPepitos)
+        trace("onSquareCreate");
+        if(Client.myEntity == -1)
         {
-            trace("PEPITO !");
+            Client.myEntity = entity;
+            inputSystem.activate();
         }
     }
 
-    private function onConnection(entity:String, ev:Dynamic)
+    @msg('String')
+    private function onHi(entity:Entity, ev:Dynamic)
+    {
+        trace(ev.msg);
+    }
+
+    private function onConnection(entity:Entity, ev:Dynamic)
     {
         trace("connected");
-        inputSystem.activate();
-        @RPC("NET_HELLO", "Hoy") {msg:String};
+
+        @RPC("HELLO", CONST.DUMMY, "Hoy") {msg:String};
     }
 
 
@@ -125,7 +130,7 @@ class Client extends Enh2<Client, EntityCreator>
 
         if(Timer.getTime() - pingTime > 1)
         {
-            @RPC("PING") {};
+            @RPC("PING", CONST.DUMMY) {};
             pingTime = Timer.getTime();
         }
     }

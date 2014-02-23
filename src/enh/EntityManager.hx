@@ -3,6 +3,7 @@ package enh;
 import enh.Uuid;
 import enh.macros.Template;
 import enh.Builders;
+import enh.Constants;
 
 
 typedef ComponentType = String;
@@ -120,7 +121,15 @@ class EntityManager
 
     public function getIdFromEntity(entity:Entity):Int
     {
-        return getComponent(entity, CId).value;
+        // Not safe :/
+        if(entity != CONST.DUMMY)
+        {
+            return getComponent(entity, CId).value;
+        }
+        else
+        {
+            return entity;
+        }
     }
 
     public function addComponent<T>(entity:Entity, component:T):T

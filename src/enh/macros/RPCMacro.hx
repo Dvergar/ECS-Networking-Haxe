@@ -186,6 +186,8 @@ class RPCMacro
             var name = "";
             var argTypes = [];
             var argExprs = [];
+            var entityName = "";
+            // var entityExpr;
 
             switch(rpcExpr.expr)
             {
@@ -193,17 +195,29 @@ class RPCMacro
                     name = getRPCname(rpc);
                     argTypes = getRPCArgumentTypes(link);
                     argExprs = getRPCArguments(rpc);
+
+                    // entityExpr = argExprs[0];
+                    // trace("argExprs 0 " + argExprs[0].expr);
+                    // switch(argExprs[0].expr)
+                    // {
+                    //     case EConst(CIdent(n)):
+                    //         entityName = n;
+                    //     case _:
+                    //         Context.error("ERROR 234324234", pos);
+                    //         // throw "ERROR 234324234";
+                    // }
                 default:
             }
 
             var functionName = getFunctionName(name);
 
-            // trace("rpcname " + name);
-            // trace("functionName " + functionName);
-            // trace("argTypes " + argTypes);
-            // trace("argExprs " + argExprs);
+            trace("rpcname " + name);
+            trace("functionName " + functionName);
+            trace("argTypes " + argTypes);
+            trace("argExprs " + argExprs);
+            // throw("entity " + entity);
 
-            // // CHANGE FUNCTION NAME & ARGUMENTS
+            // CHANGE FUNCTION NAME & ARGUMENTS
             rpcExpr.expr = ECall({ expr:EConst(CIdent(functionName)), pos:pos }, argExprs);
 
             // CREATE SEND METHOD
@@ -211,25 +225,36 @@ class RPCMacro
             var funcBlock = [];
             var serializationBlock = [];
 
+            // serializationBlock.push(macro trace("entity out " + entity));
             #if server
             serializationBlock.push(macro connections[socket].output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro connections[socket].output.writeByte($v{rpcId}));
+            serializationBlock.push(macro connections[socket].output.writeInt(em.getIdFromEntity(entity)));
             #elseif client
             // A longer path maybe ? Refactor dat shit
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
             serializationBlock.push(macro enh.socket.conn.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro enh.socket.conn.output.writeByte($v{rpcId}));
+            serializationBlock.push(macro enh.socket.conn.output.writeInt(em.getIdFromEntity(entity)));
             #end
+
 
             // var typeExport:Array<Array<Array<String>>> = new Array();
             rpcsOut.push({id:rpcId, name:name, argTypes:argTypes});
+
+            // First RPC serialization function argument : Entity
+            args.push({name:"entity",
+                       type:TPath({name : "Entity",
+                                   pack : [],
+                                   params : []}),
+                       opt:false,
+                       value:null});
 
             for(i in 0...argTypes.length)
             {
                 // Args
                 var varName = argTypes[i][0];
                 var argTypeString = argTypes[i][1];
-                // var varName = "a" + Std.string(i);
                 var type = { name : argTypeString, pack : [], params : []};
                 args.push({name:varName, type:TPath(type), opt:false, value:null});
 
@@ -275,8 +300,12 @@ class RPCMacro
             // funcBlock.push( macro trace("rpc *sent*"));
 
             // Build function
+            // throw("args " + args);
             var func = {args:args, ret:null, params:[], expr:{expr:EBlock(funcBlock), pos:pos} };
-            fields.push({ name : functionName, doc : null, meta : [], access : [APublic], kind : FFun(func), pos : pos });
+            var field = { name : functionName, doc : null, meta : [], access : [APublic], kind : FFun(func), pos : pos };
+            fields.push(field);
+
+            trace("PRPC : " + new haxe.macro.Printer().printField(field));
         }
 
 
@@ -343,6 +372,7 @@ class RPCMacro
         return fields;
     }
     #end
+
     macro static public function processRPCs():Array<haxe.macro.Field>
     {
         // trace("############# processRPCs #############");
@@ -436,6 +466,8 @@ class RPCMacro
         // block.push(macro trace("plume ba " + ba.bytesAvailable));
         // block.push(macro var input = conn.input);
         block.push(macro var rpcType = input.readByte());
+        block.push(macro var entity = em.getEntityFromId(input.readInt()));
+        macro trace("entity in " + entity);
         // block.push(macro trace("plume2 rpcType " + rpcType));
 
         var cases = [];
@@ -490,7 +522,8 @@ class RPCMacro
 
         block.push(switchExpr);
 
-        var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }, { name:"entity", type:TPath({ name:"Entity", pack:[], params:[] }), opt:false, value:null }];
+        // var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }, { name:"entity", type:TPath({ name:"Entity", pack:[], params:[] }), opt:false, value:null }];
+        var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }];
         var funcExpr = { kind:FFun({ args:funcArgs, expr:{ expr:EBlock(block), pos:pos }, params:[], ret:null }), meta:[], name:"unserializeRpc", doc:null, pos:pos, access:[APublic] };
 
         fields.push(funcExpr);
@@ -498,7 +531,7 @@ class RPCMacro
         // PRINT
         for(f in fields)
         {
-            // trace("gol : " + new haxe.macro.Printer().printField(f));
+            trace("gol : " + new haxe.macro.Printer().printField(f));
         }
 
         return fields;

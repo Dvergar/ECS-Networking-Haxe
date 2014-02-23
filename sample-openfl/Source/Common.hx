@@ -25,9 +25,9 @@ class CPosition extends Component
 
 
 @networked
-class CComponentTest extends Component
+class CHealth extends Component
 {
-    @short public var hp:Int;
+    @short public var value:Int;
 
     public function new() {super();}
 }
@@ -45,18 +45,16 @@ class EntityCreator extends EntityCreatowr
     public function new() {super();}
 
     @networked
-    public function mouse(args:Array<Int>):Entity
+    public function square(args:Array<Int>):Entity
     {
-        trace("Mouse spawn at : " + args);
+        trace("square spawn at : " + args);
 
         var x = args[0];
         var y = args[1];
 
-        trace("mouse");
-        var player = em.createEntity();
-        em.addComponent(player, new CPosition(100, 100));
-        // em.addComponent(player, new CComponentTest());
-        @sync var wat = em.addComponent(player, new CComponentTest());
+        var square = em.createEntity();
+        @sync em.addComponent(square, new CPosition(100, 100));
+        @sync var hp = em.addComponent(square, new CHealth());
 
         #if client
         var shape = new Shape();
@@ -64,10 +62,10 @@ class EntityCreator extends EntityCreatowr
         shape.graphics.drawRect(0, 0, x, y);
         shape.graphics.endFill();
 
-        em.addComponent(player, new CDrawable(shape));
+        em.addComponent(square, new CDrawable(shape));
         #end
 
-        return player;
+        return square;
     }
 }
 

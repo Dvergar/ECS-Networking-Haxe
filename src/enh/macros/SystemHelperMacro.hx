@@ -48,14 +48,14 @@ class SystemHelperMacro
         {
             // trace("fff " + f);
 
-            if(f.name == "init")
-            {
+            // if(f.name == "init")
+            // {
                 switch(f.kind){
                     case FFun(fun):
                         getMetas(fun.expr);
                     default:
                 }
-            }
+            // }
         }
 
         // trace("mamoo " + metas);

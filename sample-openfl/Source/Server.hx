@@ -1,5 +1,6 @@
 import enh.EntityManager;
 import enh.Builders;
+import enh.Constants;
 
 import Common;
 
@@ -33,10 +34,10 @@ class Server extends Enh2<Server, EntityCreator>
         this.startServer("", 32000);
 
         @addSystem MouseMovementSystem;
-        @registerListener "PING";
 
-        this.em.registerListener("CONNECTION", onConnection);
-        this.em.registerListener("NET_HELLO", onNetHello);
+        @registerListener "PING";
+        @registerListener "CONNECTION";
+        @registerListener "HELLO";
 
         this.startLoop(loop, 1/60);
 
@@ -45,21 +46,26 @@ class Server extends Enh2<Server, EntityCreator>
     function onPing(entity:Entity, ev:Dynamic) {}
 
     @msg('String')
-    private function onNetHello(entity:Entity, ev:Dynamic)
+    private function onHello(entity:Entity, ev:Dynamic)
     {
-        trace("onNetHellod");
+        trace(ev.msg);
     }
 
     private function onConnection(connectionEntity:Entity, ev:Dynamic)
     {
+
+        var square = net.createNetworkEntity("square",
+                                             connectionEntity,
+                                             [100, 100],
+                                             true);
+        net.addComponent(square, new CPepito());
+        net.setConnectionEntityFromTo(connectionEntity, square);
         net.sendWorldStateTo(connectionEntity);
 
-        var mouseEntity = net.createNetworkEntity("mouse", connectionEntity, [100, 100]);
-        net.addComponent(mouseEntity, new CPepito());
-        net.setConnectionEntityFromTo(connectionEntity, mouseEntity);
-
+        trace("mouse net id " + em.getIdFromEntity(square));
         trace("onConnection " + connectionEntity);
-        @RPC("NET_ACTION_LOL", 50, "hello") {hp:Int, msg:String};
+
+        @RPC("HI", CONST.DUMMY, "hi") {msg:String};
     }
 
     private function loop():Void

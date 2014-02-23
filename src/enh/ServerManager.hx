@@ -23,7 +23,7 @@ class NetEntity
 @:build(enh.macros.RPCMacro.addRpcUnserializeMethod())
 class ServerManager
 {
-    public var socket:ServerSocket;  // WORKAROUND FOR LD28, need to clean
+    public var socket:ServerSocket;  // WORKAROUND FOR LD28, need to clean up
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
@@ -61,14 +61,12 @@ class ServerManager
 
         for(netEntity in netEntityByEntity.iterator())
         {
+            if(netEntity.owner == connectionEntity) continue;
             sendCreate(netEntity, conn.output);
         }
     }
 
-    public function connect(conn:Connection)
-    {
-
-    }
+    public function connect(conn:Connection) {}
 
     // FIX : Too much back&forth
     public function disconnect(connectionEntity:Entity)
@@ -114,6 +112,22 @@ class ServerManager
         return component;
     }
 
+    public function addComponent2<T:{var _id:Int;}>(entity:Entity, component:T):T
+    {
+        var c = em.addComponent(entity, component);
+        var c2 = cast component;
+
+        for(conn in connectionsByEntity)
+        {
+            conn.output.writeByte(CONST.ADD_COMPONENT2);
+            conn.output.writeShort(em.getIdFromEntity(entity));
+            conn.output.writeShort(c._id);
+            ec.serialize(c._id, entity, conn.output);
+        }
+
+        return component;
+    }
+
     public function createNetworkEntity(entityType:String,
                                         ?owner:Entity,
                                         ?args:Array<Int>,
@@ -123,29 +137,37 @@ class ServerManager
 
         var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
         var entity = ec.functionByEntityType[entityType](args);
-        var conn = connectionsByEntity[owner];
+        // var conn = connectionsByEntity[owner];
 
         var netEntity = new NetEntity();
         netEntity.entity = entity;
         netEntity.id = em.setId(entity);
-        // netEntity.id = ids.get();
         netEntity.typeName = entityType;
         netEntity.typeId = entityTypeId;
-        netEntity.owner = owner;
-        netEntity.ownerId = conn.id;
         netEntity.args = args;
         netEntity.event = event;
 
-        netEntityByEntity[entity] = netEntity;
-
-        if(owner != null && netEntity.ownerId == null)
+        if(owner == null)
         {
-            throw("Owner can only be a connection entity");
+            netEntity.owner = netEntity.entity;
+            netEntity.ownerId = netEntity.id;
         }
         else
         {
-            em.addComponent(entity, new CNetOwner(netEntity.ownerId));
+            netEntity.owner = owner;
+            netEntity.ownerId = em.getIdFromEntity(owner);
         }
+
+        netEntityByEntity[entity] = netEntity;
+
+        // if(owner != null && netEntity.ownerId == null)
+        // {
+        //     throw("Owner can only be a connection entity");
+        // }
+        // else
+        // {
+            em.addComponent(entity, new CNetOwner(netEntity.ownerId));
+        // }
 
         for(conn in connectionsByEntity)
         {
@@ -153,6 +175,7 @@ class ServerManager
         }
 
         if(ec.syncedEntities[entityTypeId]) syncingEntities.push(netEntity);
+        trace("syncedEntities " + syncingEntities + " / " + ec.syncedEntities);
 
         return entity;
     }
@@ -191,6 +214,7 @@ class ServerManager
 
         for(conn in connectionsByEntity)
         {
+            trace("update");
             var output = conn.output;
 
             output.writeByte(CONST.UPDATE);
@@ -215,23 +239,34 @@ class ServerManager
             output.writeShort(netEntity.typeId);
             output.writeShort(netEntity.id);
 
-            for(compId in ec.componentsNameByEntityId[netEntity.typeId])
+            for(compId in ec.syncComponentsNameByEntityId[netEntity.typeId])
             {
-                ec.serialize(compId, netEntity.entity, output);            
+                ec.serialize(compId, netEntity.entity, output);
             }
         }
     }
 
-    public function deleteNetworkEntity(entityUUID:Int)
+    public function killEntityNow(entity:Entity)
     {
-        // enh.output.writeByte(CONST.DELETE);
-        // enh.output.writeShort(entityUUID);
+        var netEntity = netEntityByEntity[entity];
+
+        for(conn in connectionsByEntity)
+        {
+            var output = conn.output;
+
+            output.writeByte(CONST.DELETE);
+            output.writeShort(netEntity.id);
+        }
 
         // // var entity = getEntityFromId(entityUUID);
         // var entity = entitiesById[entityUUID];
-        // em.killEntity(entity);
+        netEntityByEntity.remove(entity);
+        em.killEntityNow(entity);
+        syncingEntities.remove(netEntity);
         // entitiesById.remove(entityUUID);
         // idsByEntity.remove(entity);
+
+        // TODO kill entity from syncentities
     }
 
     public function processDatas(conn:Connection)
@@ -245,6 +280,7 @@ class ServerManager
         if(msgType == CONST.CONNECTION)
         {
             var entity = em.createEntity();
+            em.setId(entity);
             conn.entity = entity;
             connectionsByEntity[entity] = conn;
 
@@ -256,7 +292,8 @@ class ServerManager
         if(!connectionsByEntity.exists(conn.entity)) return;
         if(msgType == CONST.RPC)
         {
-            unserializeRpc(conn.input, conn.entity);
+            // unserializeRpc(conn.input, conn.entity);
+            unserializeRpc(conn.input);
         }
     }
 

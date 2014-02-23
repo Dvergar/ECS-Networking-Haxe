@@ -65,6 +65,8 @@ class EntityCreatowr
         var component = em.getComponent(entity, componentClass);
 
         component.serialize(ba);
+        // if(componentType == 0)
+        //     trace("POSX " + component.x + " / comtyupe ");
     }
 
     public function unserialize(componentType:Int, entity:Entity, ba:ByteArray):Void {
@@ -72,6 +74,8 @@ class EntityCreatowr
         var component = em.getComponent(entity, componentClass);
 
         component.unserialize(ba);
+        // if(componentType == 0)
+        //     trace("NETX " + component.netx + " / comtyupe ");
     }
 
     public function addComponent(componentType:Int, entity:Entity)

@@ -10,13 +10,11 @@ class ClientManager
     private var enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
-    // private var entitiesById:Map<Int, String>;
     private var me:Entity;
     public static var myId:Int; // Workaround LD48
 
     public function new(enh:Enh)
     {
-        // this.entitiesById = new Map();
         this.enh = enh;
         this.em = enh.em;
         this.ec = enh.ec;
@@ -71,7 +69,7 @@ class ClientManager
                 em.addComponent(entity, new CNetOwner(ownerId));
 
             if(event)
-                em.pushEvent(entityTypeName.toUpperCase() + "_CREATE", entity, {id:ownerId});
+                em.pushEvent(entityTypeName.toUpperCase() + "_CREATE", entity, {ownerId:ownerId, x:args[0], y:args[1]});
 
             for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
             {
@@ -79,8 +77,6 @@ class ClientManager
             }
 
             trace("comps " + em.debugGetComponentsStringOfEntity(entity));
-
-            // entitiesById[entityUUID] = entity;
         }
 
         // if(msgType == CONST.CREATE_OWNED)
@@ -119,12 +115,10 @@ class ClientManager
         //     em.setId(entity, entityId);
         // }
 
-
         if(msgType == CONST.UPDATE)
         {
             var entityTypeId = ba.readShort();
             var entityId = ba.readShort();
-            // var entity = entitiesById[entityUUID];
             var entity = em.getEntityFromId(entityId);
 
             for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
@@ -136,20 +130,18 @@ class ClientManager
         if(msgType == CONST.DELETE)
         {
             var entityId = ba.readShort();
-            // var entity = entitiesById[entityUUID];
             var entity = em.getEntityFromId(entityId);
             em.killEntity(entity);
-            // entitiesById.remove(entityUUID);
         }
 
         if(msgType == CONST.SYNC)
         {
             var entityTypeId = ba.readShort();
             var entityId = ba.readShort();
-            // var entity = entitiesById[entityUUID];
             var entity = em.getEntityFromId(entityId);
+            // trace('entitytypeid $entityTypeId / entityid $entityId / entity $entity');
 
-            for(compId in enh.ec.componentsNameByEntityId[entityTypeId])
+            for(compId in enh.ec.syncComponentsNameByEntityId[entityTypeId])
             {
                 enh.ec.unserialize(compId, entity, ba);
             }
@@ -162,14 +154,23 @@ class ClientManager
             var entity = em.getEntityFromId(entityId);
 
             enh.ec.addComponent(compId, entity);
+        }
 
-            // enh.ec.createAndUnserialize(compId, entity, ba);
+        if(msgType == CONST.ADD_COMPONENT2)
+        {
+            trace("ADD_COMPONENT2");
+            var entityId = ba.readShort();
+            var compId = ba.readShort();
+            var entity = em.getEntityFromId(entityId);
+
+            enh.ec.addComponent(compId, entity);
+            enh.ec.unserialize(compId, entity, ba);
         }
 
         if(msgType == CONST.RPC)
         {
             // trace("RPC received");
-            unserializeRpc(ba, -1);
+            unserializeRpc(ba);
         }
     }
 }
