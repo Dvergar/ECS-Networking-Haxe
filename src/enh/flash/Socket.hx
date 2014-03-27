@@ -20,7 +20,7 @@ class Socket extends SocketHelper implements ISocketClient
 		trace("flashsocket");
 		super(enh);
 
-		em = enh.em;
+		this.em = Enh.em;
         socket = new flash.net.Socket();
         socket.addEventListener(Event.CONNECT, onConnect);
         socket.addEventListener(Event.CLOSE, onClose);

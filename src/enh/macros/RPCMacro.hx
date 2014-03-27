@@ -1,12 +1,12 @@
 package enh.macros;
 
+import enh.Constants;
+
 import haxe.macro.Expr;
 import haxe.macro.Context;
 #if macro
 import sys.io.File;
 #end
-
-import enh.Constants;
 
 
 typedef RPCType = {id:Int, name:String, argTypes:Array<Array<String>>};
@@ -225,8 +225,8 @@ class RPCMacro
             var funcBlock = [];
             var serializationBlock = [];
 
-            // serializationBlock.push(macro trace("entity out " + entity));
             #if server
+            // serializationBlock.push(macro trace("entity out " + entity));
             serializationBlock.push(macro connections[socket].output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro connections[socket].output.writeByte($v{rpcId}));
             serializationBlock.push(macro connections[socket].output.writeInt(em.getIdFromEntity(entity)));
@@ -467,9 +467,8 @@ class RPCMacro
         // block.push(macro var input = conn.input);
         block.push(macro var rpcType = input.readByte());
         block.push(macro var entity = em.getEntityFromId(input.readInt()));
-        macro trace("entity in " + entity);
+        // #if client block.push(macro trace("entity in " + entity)); #end
         // block.push(macro trace("plume2 rpcType " + rpcType));
-
         var cases = [];
         // var id=0;
         for(rpcType in rpcTypes)
@@ -505,7 +504,7 @@ class RPCMacro
             #if server
             var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro entity, obj];
             #elseif client
-            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro -1, obj];
+            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro entity, obj];
             #end
             // var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, { expr : EConst(CString("dummy")), pos : pos }, obj];
 

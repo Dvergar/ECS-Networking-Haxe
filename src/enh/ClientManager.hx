@@ -16,7 +16,7 @@ class ClientManager
     public function new(enh:Enh)
     {
         this.enh = enh;
-        this.em = enh.em;
+        this.em = Enh.em;
         this.ec = enh.ec;
     }
 

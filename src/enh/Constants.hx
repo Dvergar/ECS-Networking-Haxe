@@ -16,6 +16,4 @@ class CONST
     public static inline var SERVER:Int = 1;
 
     public static inline var DUMMY:Int = -1;
-
-    public static inline var NULLSTRING:String = "";
 }

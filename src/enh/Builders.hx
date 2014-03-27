@@ -132,7 +132,7 @@ class System<ROOTTYPE, ECTYPE>
 class Enh2<ROOTTYPE:{function init():Void;},
            ECTYPE:{var em:EntityManager;}>
 {
-    public static var EM:EntityManager;
+    public static var EM:EntityManager; // remove !
     var em:EntityManager;
     var ec:ECTYPE;
     var enh:Enh2<ROOTTYPE, ECTYPE>;
@@ -148,6 +148,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
     // TODO : clean up this mess
     public function new(root:ROOTTYPE, entityCreatorType:Class<ECTYPE>)
     {
+        throw("test");
         this.root = root;
         Enh2.EM = new EntityManager();
         this.em = Enh2.EM;
@@ -190,13 +191,15 @@ class Enh2<ROOTTYPE:{function init():Void;},
     function step(?dummy)
     {
         // FIXED TIME STEP
+        // trace("time " + Sys.time());
         var newTime = Timer.getTime();
         var frameTime = newTime - oldTime;
         accumulator += frameTime;
         oldTime = newTime;
-
+        // trace("newtime" + newTime + " / " + oldTime);
         while(accumulator >= rate)
         {
+            // trace("step");
             if(socket.connected) socket.pumpIn();
             loopFunc();
             if(socket.connected) socket.pumpOut();
@@ -239,7 +242,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
         while(true)
         {
-            // trace("acummulator " + accumulator);
             step();
 
             Sys.sleep(rate/2);  // For CPU : Ugly isn't it :3
@@ -260,7 +262,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
 // Non exposed
 class Enh
 {
-    public var em:EntityManager;
+    public static var em:EntityManager; // migrate to Enh2>Enh
     public var ec:EntityCreatowr;
     #if client
     public var manager:ClientManager;
@@ -271,7 +273,7 @@ class Enh
 
     public function new(em, ec)
     {
-        this.em = em;
+        Enh.em = em;
         this.ec = ec;
 
         #if server

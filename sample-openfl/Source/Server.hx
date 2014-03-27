@@ -55,12 +55,12 @@ class Server extends Enh2<Server, EntityCreator>
     {
 
         var square = net.createNetworkEntity("square",
-                                             connectionEntity,
+                                             null,
                                              [100, 100],
                                              true);
         net.addComponent(square, new CPepito());
         net.setConnectionEntityFromTo(connectionEntity, square);
-        net.sendWorldStateTo(connectionEntity);
+        net.sendWorldStateTo(square);
 
         trace("mouse net id " + em.getIdFromEntity(square));
         trace("onConnection " + connectionEntity);

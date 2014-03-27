@@ -19,7 +19,7 @@ class ServerSocket extends SocketHelper
     public function new(address:String, port:Int, enh:Enh)
     {
         super(enh);
-        this.em = enh.em;
+        this.em = Enh.em;
         this.connected = true;
 
         connectionIds = new IdManager(32);
@@ -58,6 +58,7 @@ class ServerSocket extends SocketHelper
         {
             if(socket == serverSocket)
             {
+                trace("pop");
                 var newSocket = socket.accept();
                 newSocket.output.bigEndian = true;
                 newSocket.input.bigEndian = true;
@@ -136,7 +137,7 @@ class ServerSocket extends SocketHelper
                 //     var msgPos = input.position;
                 //     while(input.position - msgPos < msgLength)
                 //     {
-                //         enh.serverManager.processDatas(conn);
+                //         CONST.SERVERManager.processDatas(conn);
                 //     }
                 // }
 
@@ -222,6 +223,10 @@ class ServerSocket extends SocketHelper
                 {
                     socket.output.write(output);
                 }
+                // catch(err:Dynamic)
+                // {
+                //     trace("err2 " + err);
+                // }
                 catch(ex:haxe.io.Error)
                 {
                     trace("IO ERROR 2");

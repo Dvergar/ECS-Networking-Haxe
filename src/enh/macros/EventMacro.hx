@@ -173,10 +173,10 @@ class EventMacro
                 isExtern: false, //not extern
                 meta: [], //no metadata
                 kind: TDAlias( //here we "alias" (which is what a typedef does) to a fitting ComplexType
-                    if (superType == null) 
+                    // if (superType == null) 
                         TAnonymous(fields)
-                    else 
-                        TExtend(superType, fields)
+                    // else 
+                    //     TExtend(superType, fields)
                 )
             });
 

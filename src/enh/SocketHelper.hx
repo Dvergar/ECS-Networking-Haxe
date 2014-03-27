@@ -18,8 +18,12 @@ class SocketHelper
 
         while(conn.input.bytesAvailable > 2)
         {
+            // #if client
+            // var msgLength:UInt = conn.input.readShort();
+            // #end
+            // #if server
             var msgLength = conn.input.readShort();
-            // trace("msgLength " + msgLength);
+            // #end
             if(conn.input.bytesAvailable < msgLength) break;
 
             var msgPos = conn.input.position;

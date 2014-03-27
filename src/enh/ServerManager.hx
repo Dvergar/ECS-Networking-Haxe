@@ -1,8 +1,8 @@
 package enh;
 
 import enh.Builders;
-import enh.Constants;
 import enh.Tools;
+import enh.Constants;
 
 
 class NetEntity
@@ -32,7 +32,8 @@ class ServerManager
     private var syncingEntities:Array<NetEntity>;
     // private var entityIdByConnectionEntity:Map<String, Int>;
     public var connectionsByEntity:Map<Entity, Connection>;
-    public var connections(get, never):Int;
+    public var numConnections(get, never):Int;
+    public var connectionsEntities(get, never):Iterator<Entity>;
 
     public function new(enh:Enh)
     {
@@ -43,16 +44,20 @@ class ServerManager
         // this.ids = new IdManager(500);
 
         this.enh = enh;
-        this.em = enh.em;
+        this.em = Enh.em;
         this.ec = enh.ec;
 
         trace("functionByEntityType1 " + ec.functionByEntityType);
     }
 
-    // BAAAAAAD
-    public function get_connections():Int
+    public function get_numConnections():Int
     {
         return Lambda.count(connectionsByEntity);
+    }
+
+    public function get_connectionsEntities():Iterator<Entity>
+    {
+        return connectionsByEntity.keys();
     }
 
     public function sendWorldStateTo(connectionEntity:Entity)
