@@ -148,7 +148,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
     // TODO : clean up this mess
     public function new(root:ROOTTYPE, entityCreatorType:Class<ECTYPE>)
     {
-        throw("test");
         this.root = root;
         Enh2.EM = new EntityManager();
         this.em = Enh2.EM;
