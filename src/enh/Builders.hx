@@ -67,8 +67,6 @@ class EntityCreatowr
         var component = em.getComponent(entity, componentClass);
 
         component.serialize(output);
-        // if(componentType == 0)
-        //     trace("POSX " + component.x + " / comtyupe ");
     }
 
     public function unserialize(componentType:Int, entity:Entity, input:BytesInputEnhanced):Void {
@@ -76,8 +74,6 @@ class EntityCreatowr
         var component = em.getComponent(entity, componentClass);
 
         component.unserialize(input);
-        // if(componentType == 0)
-        //     trace("NETX " + component.netx + " / comtyupe ");
     }
 
     public function addComponent(componentType:Int, entity:Entity)
@@ -129,64 +125,6 @@ class System<ROOTTYPE, ECTYPE>
 }
 
 
-class ServerSocketTest
-{
-    // public var connected:Bool;
-    // private var em:EntityManager;
-    // public var connections:Map<anette.Connection, Connection>;
-    // public var gameConnections:Map<anette.Connection, Connection>;
-    // public var waitingSockets:Map<Connection, anette.Connection>;
-    // private var connectionIds:IdManager;
-    // var enh:Enh;
-    // var server:Server;
-    // var o:Enh;
-
-    public function new(enh:Enh)
-    {
-        // super(port);
-        trace("hello");
-        this.test();
-    }
-
-    public function test():Void
-    {
-        throw("GOOD!");
-    }
-
-    function onData(anconnection:anette.Connection)
-    {
-    }
-
-    function onConnection(anconnection:anette.Connection)
-    {
-    }
-
-    public function pumpIn():Void
-    {
-    }
-
-    public function disconnect(conn:Connection, anconn:anette.Connection)
-    {
-
-    }
-
-    public function connect(conn:Connection)
-    {
-
-    }
-
-    function notifyConnection(annconn:anette.Connection, conn:Connection)
-    {
-
-    }
-
-    public function pumpOut():Void
-    {
-    }
-}
-
-
-
 @:autoBuild(enh.macros.Template.main())
 // @:generic
 class Enh2<ROOTTYPE:{function init():Void;},
@@ -211,7 +149,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
         this.root = root;
         Enh2.EM = new EntityManager();
         this.em = Enh2.EM;
-        // this.root = cast(this, ROOTTYPE);
         this.ec = Type.createInstance(entityCreatorType, []);
         this.ec.em = Enh2.EM;
         this.enhwot = this; // allows root to also _processRPCs correctly
@@ -226,19 +163,11 @@ class Enh2<ROOTTYPE:{function init():Void;},
         socket = new Socket(this._enh);
         #end
 
-        // trace("_enh " + Type.typeof(this._enh));
-
-        // new ServerSocketTest(this._enh);
-
-
-
-
         root.init();
     }
 
     public function addSystem<U>(systemClass:Class<U>):U
     {
-        // var system:U = Type.createInstance(systemClass, []);
         var system:U = Type.createEmptyInstance(systemClass);
 
         Reflect.setField(system, "em", Enh2.EM);
@@ -248,7 +177,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
         #if server
         Reflect.setField(system, "net", _enh.manager);
         #end
-        // trace("system enh " + system.enh);
         Reflect.callMethod(system, Reflect.field(system, "init"), []);
 
         return system;
@@ -257,16 +185,13 @@ class Enh2<ROOTTYPE:{function init():Void;},
     function step(?dummy)
     {
         // FIXED TIME STEP
-        // trace("time " + Sys.time());
         var newTime = Timer.getTime();
         var frameTime = newTime - oldTime;
         accumulator += frameTime;
         oldTime = newTime;
-        // trace("newtime" + newTime + " / " + oldTime);
+
         while(accumulator >= rate)
         {
-            // trace("step " + Type.typeof(socket));
-            // if(socket.connected) socket.lel();
             if(socket.connected) socket.pumpIn();
             loopFunc();
             if(socket.connected) socket.pumpOut();
@@ -318,14 +243,8 @@ class Enh2<ROOTTYPE:{function init():Void;},
     public function startServer(address:String, port:Int)
     {
         trace("startserver ");
-        // var w = new Wot();
-        // w.lel();
-        // var s = new ServerSocket(address, port, this._enh);
-        // s.test();
         this.socket = new ServerSocket(address, port, this._enh);
-        // this.socket.lel();
         net.socket = socket;
-        // trace("socket " + Type.getClass(socket));
         return socket;
     }
     #end
