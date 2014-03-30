@@ -3,6 +3,8 @@ ECS-Networking-Haxe
 
 Entity Component System architecture with networking support, component state synchronization + RPC (kinda).
 
+*Warning : This library is a bit clusterfucky, it's might not be a very good idea to use it.*
+
 ### Should I use this library ?
 Probably not, at this stage it's fine for protyping but there's some macro code and not enough error handling; if you go a bit out of the sample template you might trigger weird behaviours. It's also not documented.
 
