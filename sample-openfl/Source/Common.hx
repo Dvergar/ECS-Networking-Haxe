@@ -27,7 +27,7 @@ class CPosition extends Component
 @networked
 class CHealth extends Component
 {
-    @short public var value:Int;
+    @short public var value:Int = 100;
 
     public function new() {super();}
 }
@@ -53,6 +53,7 @@ class EntityCreator extends EntityCreatowr
         var y = args[1];
 
         var square = em.createEntity();
+        trace("square entity " + square);
         @sync em.addComponent(square, new CPosition(100, 100));
         @sync var hp = em.addComponent(square, new CHealth());
 

@@ -142,6 +142,8 @@ class MacroTest
             entityId++;
         }
 
+        // throw("exprsEntityTypeNameById " + exprsEntityTypeNameById);
+
         // DECLARATION ENTITYFUNCTIONSMAP
         for(f in fields)
         {
@@ -370,19 +372,17 @@ class MacroTest
             switch(varType)
             {
                 case "short":
-                    macro trace("serialize : " + $i{varNameOut});
-                    eout = macro ba.writeShort($i{varNameOut});
+                    eout = macro ba.writeInt16($i{varNameOut});
 
-                    macro trace("unserialize : " + $i{varNameIn});
-                    ein = macro $i{varNameIn} = ba.readShort();
+                    ein = macro $i{varNameIn} = ba.readInt16();
                     // #if neko
                     // eout = macro ba.writeShort(try Std.int($i{netVar}) catch(e:Dynamic) 0);
                     // #else
                     // #end
 
                 case "int":
-                    eout = macro ba.writeInt($i{varNameOut});
-                    ein  = macro $i{varNameIn} = ba.readInt();
+                    eout = macro ba.writeInt32($i{varNameOut});
+                    ein  = macro $i{varNameIn} = ba.readInt32();
 
                 case "byte":
                     eout = macro ba.writeByte($i{varNameOut});
@@ -391,8 +391,10 @@ class MacroTest
                     eout = macro ba.writeFloat($i{varNameOut});
                     ein  = macro $i{varNameIn} = ba.readFloat();
                 case "bool":
-                    eout = macro ba.writeBoolean($i{varNameOut});
-                    ein  = macro $i{varNameIn} = ba.readBoolean();
+                    eout = macro ($i{varNameOut} == true) ? ba.writeByte(1) : ba.writeByte(0);
+                    // eout = macro ba.writeBoolean($i{varNameOut});
+                    ein  = macro $i{varNameIn} = (ba.readByte() == 0) ? return false : return true;
+                    // ein  = macro $i{varNameIn} = ba.readBoolean();
             }
 
             // trace("ein " + ein);

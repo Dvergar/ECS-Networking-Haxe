@@ -23,7 +23,8 @@ class CDrawable extends Component
     public var displayObject:DisplayObject;
     public var parent:DisplayObjectContainer;
 
-    public function new(displayObject:DisplayObject, ?parent:DisplayObjectContainer)
+    public function new(displayObject:DisplayObject,
+                        ?parent:DisplayObjectContainer)
     {
         super();
 
@@ -43,7 +44,8 @@ class InputSystem extends System<Client, EntityCreator>
 
     public function activate()
     {
-        flash.Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+        flash.Lib.current.stage.addEventListener(MouseEvent.MOUSE_MOVE,
+                                                 onMouseMove);
     }
 
     private function onMouseMove(event:MouseEvent)
@@ -95,6 +97,7 @@ class Client extends Enh2<Client, EntityCreator>
 
         @registerListener "HI";
         @registerListener "CONNECTION";
+        @registerListener "DISCONNECTION";
         @registerListener "SQUARE_CREATE";
 
         startLoop(loop, 1/60);
@@ -102,7 +105,7 @@ class Client extends Enh2<Client, EntityCreator>
 
     private function onSquareCreate(entity:Entity, ev:Dynamic)
     {
-        trace("onSquareCreate");
+        trace("onSquareCreate " + entity);
         if(Client.myEntity == -1)
         {
             Client.myEntity = entity;
@@ -123,15 +126,20 @@ class Client extends Enh2<Client, EntityCreator>
         @RPC("HELLO", CONST.DUMMY, "Hoy") {msg:String};
     }
 
+    private function onDisconnection(entity:Entity, ev:Dynamic)
+    {
+        trace("disconnected");
+    }
 
     private function loop()
     {
+        // trace(enh.socket.connected);
         drawableSystem.processEntities();
 
-        if(Timer.getTime() - pingTime > 1)
-        {
-            @RPC("PING", CONST.DUMMY) {};
-            pingTime = Timer.getTime();
-        }
+        // if(Timer.getTime() - pingTime > 1)
+        // {
+        //     @RPC("PING", CONST.DUMMY) {};
+        //     pingTime = Timer.getTime();
+        // }
     }
 }

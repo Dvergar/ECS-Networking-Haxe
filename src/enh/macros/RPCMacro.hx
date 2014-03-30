@@ -227,15 +227,16 @@ class RPCMacro
 
             #if server
             // serializationBlock.push(macro trace("entity out " + entity));
-            serializationBlock.push(macro connections[socket].output.writeByte($v{CONST.RPC}));
-            serializationBlock.push(macro connections[socket].output.writeByte($v{rpcId}));
-            serializationBlock.push(macro connections[socket].output.writeInt(em.getIdFromEntity(entity)));
+            // serializationBlock.push(macro trace("RPC OUT " + $v{name} + " id : " + $v{rpcId}));
+            serializationBlock.push(macro connections[socket].anette.output.writeByte($v{CONST.RPC}));
+            serializationBlock.push(macro connections[socket].anette.output.writeByte($v{rpcId}));
+            serializationBlock.push(macro connections[socket].anette.output.writeInt32(em.getIdFromEntity(entity)));
             #elseif client
             // A longer path maybe ? Refactor dat shit
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
-            serializationBlock.push(macro enh.socket.conn.output.writeByte($v{CONST.RPC}));
-            serializationBlock.push(macro enh.socket.conn.output.writeByte($v{rpcId}));
-            serializationBlock.push(macro enh.socket.conn.output.writeInt(em.getIdFromEntity(entity)));
+            serializationBlock.push(macro enhwot.socket.conn.anette.output.writeByte($v{CONST.RPC}));
+            serializationBlock.push(macro enhwot.socket.conn.anette.output.writeByte($v{rpcId}));
+            serializationBlock.push(macro enhwot.socket.conn.anette.output.writeInt32(em.getIdFromEntity(entity)));
             #end
 
 
@@ -264,26 +265,27 @@ class RPCMacro
                 #if server
                 switch(argTypeString)
                 {
+                    // CLEAN THIS LONG PATH OMAGAD
                     case "String":                        
-                        serializationBlock.push( macro connections[socket].output.writeUTF($i{varName}) );
+                        serializationBlock.push( macro connections[socket].anette.output.writeUTF($i{varName}) );
                     case "Int":
-                        serializationBlock.push( macro connections[socket].output.writeInt($i{varName}) );
+                        serializationBlock.push( macro connections[socket].anette.output.writeInt32($i{varName}) );
                     case "Short":
-                        serializationBlock.push( macro connections[socket].output.writeShort($i{varName}) );
+                        serializationBlock.push( macro connections[socket].anette.output.writeInt16($i{varName}) );
                     case "Bool":
-                        serializationBlock.push( macro connections[socket].output.writeBoolean($i{varName}) );
+                        serializationBlock.push( macro connections[socket].anette.output.writeBoolean($i{varName}) );
                 }
                 #elseif client
                 switch(argTypeString)
                 {
                     case "String":                        
-                        serializationBlock.push( macro enh.socket.conn.output.writeUTF($i{varName}) );
+                        serializationBlock.push( macro enhwot.socket.conn.anette.output.writeUTF($i{varName}) );
                     case "Int":
-                        serializationBlock.push( macro enh.socket.conn.output.writeInt($i{varName}) );
+                        serializationBlock.push( macro enhwot.socket.conn.anette.output.writeInt32($i{varName}) );
                     case "Short":
-                        serializationBlock.push( macro enh.socket.conn.output.writeShort($i{varName}) );
+                        serializationBlock.push( macro enhwot.socket.conn.anette.output.writeInt16($i{varName}) );
                     case "Bool":
-                        serializationBlock.push( macro enh.socket.conn.output.writeBoolean($i{varName}) );
+                        serializationBlock.push( macro enhwot.socket.conn.anette.output.writeBoolean($i{varName}) );
                 }
                 #end
             }
@@ -294,7 +296,7 @@ class RPCMacro
             #elseif server
             // funcBlock.push(macro var allConn = Enh.em.getAllComponentsOfType(CConnexion));
             // funcBlock.push(macro for(conn in allConn) { $a{serializationBlock} } );
-            funcBlock.push( macro var connections = enh.socket.gameConnections );
+            funcBlock.push( macro var connections = enhwot.socket.gameConnections );
             funcBlock.push( macro for(socket in connections.keys()) { $a{serializationBlock} } );
             #end
             // funcBlock.push( macro trace("rpc *sent*"));
@@ -452,7 +454,6 @@ class RPCMacro
         var fields = Context.getBuildFields();
         var pos = Context.currentPos();
 
-        // var rpcTypes = getRpcTypes();
         filesCheck();
         #if client
         var rpcTypes:Array<RPCType> = haxe.Unserializer.run( File.getContent("Source/server_rpcsOut.txt") );
@@ -460,17 +461,14 @@ class RPCMacro
         var rpcTypes:Array<RPCType> = haxe.Unserializer.run( File.getContent("client_rpcsOut.txt") );
         #end
 
-        // trace("KAWAI " + rpcTypes);
-
         var block = [];
-        // block.push(macro trace("plume ba " + ba.bytesAvailable));
-        // block.push(macro var input = conn.input);
+
         block.push(macro var rpcType = input.readByte());
-        block.push(macro var entity = em.getEntityFromId(input.readInt()));
-        // #if client block.push(macro trace("entity in " + entity)); #end
-        // block.push(macro trace("plume2 rpcType " + rpcType));
+        // block.push(macro trace("rpc received " + rpcType));
+        block.push(macro var entity = em.getEntityFromId(input.readInt32()));
+
         var cases = [];
-        // var id=0;
+
         for(rpcType in rpcTypes)
         {
             var caseBlock = [];
@@ -485,9 +483,9 @@ class RPCMacro
                 switch(typeName)
                 {
                     case "Int":
-                        e = macro input.readInt();
+                        e = macro input.readInt32();
                     case "Short":
-                        e = macro input.readShort();
+                        e = macro input.readInt16();
                     case "String":
                         e = macro input.readUTF();
                     case "Bool":
@@ -522,7 +520,7 @@ class RPCMacro
         block.push(switchExpr);
 
         // var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }, { name:"entity", type:TPath({ name:"Entity", pack:[], params:[] }), opt:false, value:null }];
-        var funcArgs = [{ name:"input", type:TPath({ name:"ByteArray", pack:[], params:[] }), opt:false, value:null }];
+        var funcArgs = [{ name:"input", type:TPath({ name:"BytesInputEnhanced", pack:[], params:[] }), opt:false, value:null }];
         var funcExpr = { kind:FFun({ args:funcArgs, expr:{ expr:EBlock(block), pos:pos }, params:[], ret:null }), meta:[], name:"unserializeRpc", doc:null, pos:pos, access:[APublic] };
 
         fields.push(funcExpr);

@@ -1,6 +1,8 @@
 -main Server.hx
--cpp D:\prog\#BUILDS\ECSCPP
+-cpp "D:\prog\#BUILDS\ECSCPP"
+-cp ../../src
+-D server
+-lib anette
 -debug
--cmd echo test
 
-# -cmd "D:\prog\#BUILDS\ECSCPP\Server-debug.exe"
+-cmd "D:\prog\#BUILDS\ECSCPP\Server-debug.exe"

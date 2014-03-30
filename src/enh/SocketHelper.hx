@@ -2,14 +2,14 @@ package enh;
 
 import enh.Builders;
 
-
+// #if client
 class SocketHelper
 {
-	private var enh:Enh;
+	// private var enh:Enh;
 
 	public function new(enh)
 	{
-		this.enh = enh;
+		// this.enh = enh;
 	}
 
 	private function readSocket(conn:Connection)
@@ -41,3 +41,4 @@ class SocketHelper
         conn.input.position = conn.input.length;
 	}
 }
+// #end

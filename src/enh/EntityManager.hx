@@ -235,7 +235,7 @@ class EntityManager
 
     public function killEntityNow(entity:Entity)
     {
-        // trace("killEntityNow " + entity);
+        trace("killEntityNow " + entity);
         // IDS
         if(hasComponent(entity, CId))
         {

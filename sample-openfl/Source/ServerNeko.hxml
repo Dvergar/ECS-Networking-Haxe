@@ -1,0 +1,8 @@
+-main Server.hx
+-neko "D:\prog\#BUILDS\ECSneko.n"
+-cp ../../src
+-D server
+-lib anette
+-debug
+
+-cmd "neko D:\prog\#BUILDS\ECSneko.n"

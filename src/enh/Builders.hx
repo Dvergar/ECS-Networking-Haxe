@@ -1,5 +1,7 @@
 package enh;
 
+import anette.Bytes;
+
 typedef Entity = Int;
 typedef Short = Int;
 
@@ -60,20 +62,20 @@ class EntityCreatowr
     public var syncedEntities:Array<Bool>;
     public var em:EntityManager;
 
-    public function serialize(componentType:Int, entity:Entity, ba:ByteArray):Void {
+    public function serialize(componentType:Int, entity:Entity, output:BytesOutputEnhanced):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
-        component.serialize(ba);
+        component.serialize(output);
         // if(componentType == 0)
         //     trace("POSX " + component.x + " / comtyupe ");
     }
 
-    public function unserialize(componentType:Int, entity:Entity, ba:ByteArray):Void {
+    public function unserialize(componentType:Int, entity:Entity, input:BytesInputEnhanced):Void {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
-        component.unserialize(ba);
+        component.unserialize(input);
         // if(componentType == 0)
         //     trace("NETX " + component.netx + " / comtyupe ");
     }
@@ -119,12 +121,70 @@ class System<ROOTTYPE, ECTYPE>
 {
     public var em:EntityManager;
     public var root:ROOTTYPE;
-    public var enh:ROOTTYPE;
+    public var enhwot:ROOTTYPE;
     public var ec:ECTYPE;
     #if server
     public var net:ServerManager;
     #end
 }
+
+
+class ServerSocketTest
+{
+    // public var connected:Bool;
+    // private var em:EntityManager;
+    // public var connections:Map<anette.Connection, Connection>;
+    // public var gameConnections:Map<anette.Connection, Connection>;
+    // public var waitingSockets:Map<Connection, anette.Connection>;
+    // private var connectionIds:IdManager;
+    // var enh:Enh;
+    // var server:Server;
+    // var o:Enh;
+
+    public function new(enh:Enh)
+    {
+        // super(port);
+        trace("hello");
+        this.test();
+    }
+
+    public function test():Void
+    {
+        throw("GOOD!");
+    }
+
+    function onData(anconnection:anette.Connection)
+    {
+    }
+
+    function onConnection(anconnection:anette.Connection)
+    {
+    }
+
+    public function pumpIn():Void
+    {
+    }
+
+    public function disconnect(conn:Connection, anconn:anette.Connection)
+    {
+
+    }
+
+    public function connect(conn:Connection)
+    {
+
+    }
+
+    function notifyConnection(annconn:anette.Connection, conn:Connection)
+    {
+
+    }
+
+    public function pumpOut():Void
+    {
+    }
+}
+
 
 
 @:autoBuild(enh.macros.Template.main())
@@ -135,7 +195,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
     public static var EM:EntityManager; // remove !
     var em:EntityManager;
     var ec:ECTYPE;
-    var enh:Enh2<ROOTTYPE, ECTYPE>;
+    var enhwot:Enh2<ROOTTYPE, ECTYPE>;
     var root:ROOTTYPE;
 
     var _enh:Enh;
@@ -154,7 +214,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
         // this.root = cast(this, ROOTTYPE);
         this.ec = Type.createInstance(entityCreatorType, []);
         this.ec.em = Enh2.EM;
-        this.enh = this; // allows root to also _processRPCs correctly
+        this.enhwot = this; // allows root to also _processRPCs correctly
 
         // Only only used as a helper to reach ec & em without type parameter
         this._enh = new Enh(Enh2.EM, cast ec);
@@ -166,6 +226,13 @@ class Enh2<ROOTTYPE:{function init():Void;},
         socket = new Socket(this._enh);
         #end
 
+        // trace("_enh " + Type.typeof(this._enh));
+
+        // new ServerSocketTest(this._enh);
+
+
+
+
         root.init();
     }
 
@@ -176,7 +243,7 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
         Reflect.setField(system, "em", Enh2.EM);
         Reflect.setField(system, "root", root);
-        Reflect.setField(system, "enh", this);
+        Reflect.setField(system, "enhwot", this);  // enh ? neko ?
         Reflect.setField(system, "ec", ec);
         #if server
         Reflect.setField(system, "net", _enh.manager);
@@ -198,7 +265,8 @@ class Enh2<ROOTTYPE:{function init():Void;},
         // trace("newtime" + newTime + " / " + oldTime);
         while(accumulator >= rate)
         {
-            // trace("step");
+            // trace("step " + Type.typeof(socket));
+            // if(socket.connected) socket.lel();
             if(socket.connected) socket.pumpIn();
             loopFunc();
             if(socket.connected) socket.pumpOut();
@@ -249,13 +317,28 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     public function startServer(address:String, port:Int)
     {
-        trace("startserver");
+        trace("startserver ");
+        // var w = new Wot();
+        // w.lel();
+        // var s = new ServerSocket(address, port, this._enh);
+        // s.test();
         this.socket = new ServerSocket(address, port, this._enh);
+        // this.socket.lel();
         net.socket = socket;
-        trace("socket " + Type.getClass(socket));
+        // trace("socket " + Type.getClass(socket));
         return socket;
     }
     #end
+}
+
+class Wot
+{
+    public function new(){this.lel();}
+
+    public function lel()
+    {
+        trace("lel " + Type.typeof(this));
+    }
 }
 
 // Non exposed
@@ -272,10 +355,12 @@ class Enh
 
     public function new(em, ec)
     {
+        trace("ENH " + Type.typeof(Enh) + " / " + Type.typeof(Wot));
         Enh.em = em;
         this.ec = ec;
 
         #if server
+        trace("manager");
         manager = new ServerManager(this);
         #end
         #if client

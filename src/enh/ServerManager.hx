@@ -4,6 +4,9 @@ import enh.Builders;
 import enh.Tools;
 import enh.Constants;
 
+// import enh.Bytes;
+import anette.Bytes;
+
 
 class NetEntity
 {
@@ -24,7 +27,7 @@ class NetEntity
 class ServerManager
 {
     public var socket:ServerSocket;  // WORKAROUND FOR LD28, need to clean up
-    private var enh:Enh;
+    private var _enh:Enh;
     private var em:EntityManager;
     private var ec:EntityCreatowr;
     // private var ids:IdManager;
@@ -35,7 +38,7 @@ class ServerManager
     public var numConnections(get, never):Int;
     public var connectionsEntities(get, never):Iterator<Entity>;
 
-    public function new(enh:Enh)
+    public function new(_enh:Enh)
     {
         this.connectionsByEntity = new Map();
         this.netEntityByEntity = new Map();
@@ -43,9 +46,9 @@ class ServerManager
         this.syncingEntities = new Array();
         // this.ids = new IdManager(500);
 
-        this.enh = enh;
+        this._enh = _enh;
         this.em = Enh.em;
-        this.ec = enh.ec;
+        this.ec = _enh.ec;
 
         trace("functionByEntityType1 " + ec.functionByEntityType);
     }
@@ -67,7 +70,7 @@ class ServerManager
         for(netEntity in netEntityByEntity.iterator())
         {
             if(netEntity.owner == connectionEntity) continue;
-            sendCreate(netEntity, conn.output);
+            sendCreate(netEntity, conn.anette.output);
         }
     }
 
@@ -78,8 +81,9 @@ class ServerManager
     {
         trace("sm disconnect");
         var conn = connectionsByEntity.get(connectionEntity);
-        var s = socket.getSocketFromConnection(conn);
-        socket.disconnect(conn, s);
+        // var s = socket.getSocketFromConnection(conn);
+        // socket.disconnect(conn, s);
+        // socket.disconnect(conn, conn.anette);
         _disconnect(conn);
     }
 
@@ -87,8 +91,13 @@ class ServerManager
     {
         trace("sm _disconnect");
         em.pushEvent("DISCONNECTION", conn.entity, {});
-        var entity = conn.entity;
+        var entity = conn.entity;  // ?
         connectionsByEntity.remove(entity);
+        killEntityNow(entity);
+
+        trace(Lambda.count(connectionsByEntity));
+        trace(Lambda.count(netEntityByEntity));
+        trace(syncingEntities.length);
     }
 
     public function setConnectionEntityFromTo(connectionEntity:Entity,
@@ -108,9 +117,9 @@ class ServerManager
 
         for(conn in connectionsByEntity)
         {
-            conn.output.writeByte(CONST.ADD_COMPONENT);
-            conn.output.writeShort(em.getIdFromEntity(entity));
-            conn.output.writeShort(c._id);
+            conn.anette.output.writeByte(CONST.ADD_COMPONENT);
+            conn.anette.output.writeInt16(em.getIdFromEntity(entity));
+            conn.anette.output.writeInt16(c._id);
             // ec.serialize(c._id, entity, conn.output);
         }
 
@@ -124,10 +133,10 @@ class ServerManager
 
         for(conn in connectionsByEntity)
         {
-            conn.output.writeByte(CONST.ADD_COMPONENT2);
-            conn.output.writeShort(em.getIdFromEntity(entity));
-            conn.output.writeShort(c._id);
-            ec.serialize(c._id, entity, conn.output);
+            conn.anette.output.writeByte(CONST.ADD_COMPONENT2);
+            conn.anette.output.writeInt16(em.getIdFromEntity(entity));
+            conn.anette.output.writeInt16(c._id);
+            ec.serialize(c._id, entity, conn.anette.output);
         }
 
         return component;
@@ -141,6 +150,7 @@ class ServerManager
         if(args == null) args = new Array();
 
         var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
+        trace("createNetworkEntity type id " + entityTypeId);
         var entity = ec.functionByEntityType[entityType](args);
         // var conn = connectionsByEntity[owner];
 
@@ -176,7 +186,7 @@ class ServerManager
 
         for(conn in connectionsByEntity)
         {
-            sendCreate(netEntity, conn.output);
+            sendCreate(netEntity, conn.anette.output);
         }
 
         if(ec.syncedEntities[entityTypeId]) syncingEntities.push(netEntity);
@@ -185,8 +195,10 @@ class ServerManager
         return entity;
     }
 
-    private function sendCreate(netEntity:NetEntity, output:ByteArray)
+    private function sendCreate(netEntity:NetEntity, output:BytesOutputEnhanced)
     {
+        trace("sendcreate " + netEntity.id);
+
         if(netEntity.ownerId != null)
         {
             output.writeByte(CONST.CREATE_OWNED);
@@ -200,11 +212,11 @@ class ServerManager
         output.writeByte(netEntity.args.length);
         for(arg in netEntity.args)
         {
-            output.writeShort(arg);
+            output.writeInt16(arg);
         }
 
-        output.writeShort(netEntity.typeId);
-        output.writeShort(netEntity.id);
+        output.writeInt16(netEntity.typeId);
+        output.writeInt16(netEntity.id);
         output.writeBoolean(netEntity.event);
 
         for(compId in ec.componentsNameByEntityId[netEntity.typeId])
@@ -220,11 +232,11 @@ class ServerManager
         for(conn in connectionsByEntity)
         {
             trace("update");
-            var output = conn.output;
+            var output = conn.anette.output;
 
             output.writeByte(CONST.UPDATE);
-            output.writeShort(netEntity.typeId);
-            output.writeShort(netEntity.id);
+            output.writeInt16(netEntity.typeId);
+            output.writeInt16(netEntity.id);
 
             for(compId in ec.componentsNameByEntityId[netEntity.typeId])
             {
@@ -238,11 +250,11 @@ class ServerManager
     {
         for(conn in connectionsByEntity)
         {
-            var output = conn.output;
+            var output = conn.anette.output;
 
             output.writeByte(CONST.SYNC);
-            output.writeShort(netEntity.typeId);
-            output.writeShort(netEntity.id);
+            output.writeInt16(netEntity.typeId);
+            output.writeInt16(netEntity.id);
 
             for(compId in ec.syncComponentsNameByEntityId[netEntity.typeId])
             {
@@ -257,10 +269,10 @@ class ServerManager
 
         for(conn in connectionsByEntity)
         {
-            var output = conn.output;
+            var output = conn.anette.output;
 
             output.writeByte(CONST.DELETE);
-            output.writeShort(netEntity.id);
+            output.writeInt16(netEntity.id);
         }
 
         // // var entity = getEntityFromId(entityUUID);
@@ -274,12 +286,11 @@ class ServerManager
         // TODO kill entity from syncentities
     }
 
-    public function processDatas(conn:Connection)
+    public function processDatas(anconn:anette.Connection)
     {
         // handle this for SYNC as well
-        // trace("datas from " + conn.entity);
-
-        var msgType = conn.input.readByte();
+        var conn = socket.connections.get(anconn);
+        var msgType = anconn.input.readByte();
         // trace("msgtype " + msgType);
 
         if(msgType == CONST.CONNECTION)
@@ -298,7 +309,7 @@ class ServerManager
         if(msgType == CONST.RPC)
         {
             // unserializeRpc(conn.input, conn.entity);
-            unserializeRpc(conn.input);
+            unserializeRpc(anconn.input);
         }
     }
 

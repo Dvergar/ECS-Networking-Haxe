@@ -31,12 +31,13 @@ class Server extends Enh2<Server, EntityCreator>
 
     public function init()
     {
-        this.startServer("", 32000);
+        this.startServer("192.168.1.4", 32000);
 
         @addSystem MouseMovementSystem;
 
         @registerListener "PING";
         @registerListener "CONNECTION";
+        @registerListener "DISCONNECTION";
         @registerListener "HELLO";
 
         this.startLoop(loop, 1/60);
@@ -62,10 +63,15 @@ class Server extends Enh2<Server, EntityCreator>
         net.setConnectionEntityFromTo(connectionEntity, square);
         net.sendWorldStateTo(square);
 
-        trace("mouse net id " + em.getIdFromEntity(square));
+        trace("square net id " + em.getIdFromEntity(square));
         trace("onConnection " + connectionEntity);
 
         @RPC("HI", CONST.DUMMY, "hi") {msg:String};
+    }
+
+    private function onDisconnection(entity:Entity, ev:Dynamic)
+    {
+        trace("client disconnected");
     }
 
     private function loop():Void
