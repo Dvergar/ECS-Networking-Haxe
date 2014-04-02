@@ -4,7 +4,6 @@ import enh.Builders;
 import enh.Tools;
 import enh.Constants;
 
-// import enh.Bytes;
 import anette.Bytes;
 
 
@@ -26,31 +25,23 @@ class NetEntity
 @:build(enh.macros.RPCMacro.addRpcUnserializeMethod())
 class ServerManager
 {
-    public var socket:ServerSocket;  // WORKAROUND FOR LD28, need to clean up
-    private var _enh:Enh;
-    private var em:EntityManager;
-    private var ec:EntityCreatowr;
-    // private var ids:IdManager;
-    private var netEntityByEntity:Map<Entity, NetEntity>;
-    private var syncingEntities:Array<NetEntity>;
-    // private var entityIdByConnectionEntity:Map<String, Int>;
+    var em:EntityManager;
+    var ec:EntityCreatorBase;
+    var netEntityByEntity:Map<Entity, NetEntity>;
+    var syncingEntities:Array<NetEntity>;
+    public var socket:ServerSocket;
     public var connectionsByEntity:Map<Entity, Connection>;
     public var numConnections(get, never):Int;
     public var connectionsEntities(get, never):Iterator<Entity>;
 
-    public function new(_enh:Enh)
+    public function new(em:EntityManager, ec:EntityCreatorBase)
     {
         this.connectionsByEntity = new Map();
         this.netEntityByEntity = new Map();
-        // this.entityIdByConnectionEntity = new Map();
         this.syncingEntities = new Array();
-        // this.ids = new IdManager(500);
 
-        this._enh = _enh;
-        this.em = Enh.em;
-        this.ec = _enh.ec;
-
-        trace("functionByEntityType1 " + ec.functionByEntityType);
+        this.em = em;
+        this.ec = ec;
     }
 
     public function get_numConnections():Int
@@ -76,14 +67,10 @@ class ServerManager
 
     public function connect(conn:Connection) {}
 
-    // FIX : Too much back&forth
     public function disconnect(connectionEntity:Entity)
     {
         trace("sm disconnect");
         var conn = connectionsByEntity.get(connectionEntity);
-        // var s = socket.getSocketFromConnection(conn);
-        // socket.disconnect(conn, s);
-        // socket.disconnect(conn, conn.anette);
         _disconnect(conn);
     }
 
@@ -94,10 +81,6 @@ class ServerManager
         var entity = conn.entity;  // ?
         connectionsByEntity.remove(entity);
         killEntityNow(entity);
-
-        trace(Lambda.count(connectionsByEntity));
-        trace(Lambda.count(netEntityByEntity));
-        trace(syncingEntities.length);
     }
 
     public function setConnectionEntityFromTo(connectionEntity:Entity,
@@ -152,7 +135,6 @@ class ServerManager
         var entityTypeId = ec.entityTypeIdByEntityTypeName[entityType];
         trace("createNetworkEntity type id " + entityTypeId);
         var entity = ec.functionByEntityType[entityType](args);
-        // var conn = connectionsByEntity[owner];
 
         var netEntity = new NetEntity();
         netEntity.entity = entity;
@@ -174,15 +156,7 @@ class ServerManager
         }
 
         netEntityByEntity[entity] = netEntity;
-
-        // if(owner != null && netEntity.ownerId == null)
-        // {
-        //     throw("Owner can only be a connection entity");
-        // }
-        // else
-        // {
-            em.addComponent(entity, new CNetOwner(netEntity.ownerId));
-        // }
+        em.addComponent(entity, new CNetOwner(netEntity.ownerId));
 
         for(conn in connectionsByEntity)
         {
@@ -275,15 +249,9 @@ class ServerManager
             output.writeInt16(netEntity.id);
         }
 
-        // // var entity = getEntityFromId(entityUUID);
-        // var entity = entitiesById[entityUUID];
         netEntityByEntity.remove(entity);
         em.killEntityNow(entity);
         syncingEntities.remove(netEntity);
-        // entitiesById.remove(entityUUID);
-        // idsByEntity.remove(entity);
-
-        // TODO kill entity from syncentities
     }
 
     public function processDatas(anconn:anette.Connection)
@@ -300,7 +268,6 @@ class ServerManager
             conn.entity = entity;
             connectionsByEntity[entity] = conn;
 
-            trace("plop");
             socket.connect(conn);
             em.pushEvent("CONNECTION", conn.entity, {});
         }

@@ -77,7 +77,7 @@ class DrawableSystem extends System<Client, EntityCreator>
 }
 
 
-class Client extends Enh2<Client, EntityCreator>
+class Client extends Enh<Client, EntityCreator>
 {
     var pingTime:Float;
     public static var myEntity:Entity = -1;
@@ -100,7 +100,7 @@ class Client extends Enh2<Client, EntityCreator>
         @registerListener "DISCONNECTION";
         @registerListener "SQUARE_CREATE";
 
-        startLoop(loop, 1/60);
+        startLoop(loop, 1 / 60);
     }
 
     private function onSquareCreate(entity:Entity, ev:Dynamic)

@@ -5,6 +5,7 @@ import anette.Bytes;
 typedef Entity = Int;
 typedef Short = Int;
 
+
 @:autoBuild(enh.macros.MacroTest.buildComponent())
 class Component
 {
@@ -50,7 +51,7 @@ class CType extends Component
 
 
 @:autoBuild(enh.macros.MacroTest.buildMap())
-class EntityCreatowr
+class EntityCreatorBase
 {
     // TO-DO : God, refactor this mess with typedefs or something :'(
     public var entityTypeIdByEntityTypeName:Map<String, Int>;
@@ -62,14 +63,16 @@ class EntityCreatowr
     public var syncedEntities:Array<Bool>;
     public var em:EntityManager;
 
-    public function serialize(componentType:Int, entity:Entity, output:BytesOutputEnhanced):Void {
+    public function serialize(componentType:Int, entity:Entity, output:BytesOutputEnhanced):Void
+    {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
         component.serialize(output);
     }
 
-    public function unserialize(componentType:Int, entity:Entity, input:BytesInputEnhanced):Void {
+    public function unserialize(componentType:Int, entity:Entity, input:BytesInputEnhanced):Void
+    {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
 
@@ -102,7 +105,6 @@ class EntityCreatowr
         for(comp in components)
         {
             var c = Type.resolveClass(comp);
-            // Why untyped ?
             networkComponents.push(untyped c);
         }
 
@@ -126,56 +128,50 @@ class System<ROOTTYPE, ECTYPE>
 
 
 @:autoBuild(enh.macros.Template.main())
-// @:generic
-class Enh2<ROOTTYPE:{function init():Void;},
-           ECTYPE:{var em:EntityManager;}>
+class Enh<ROOTTYPE:{function init():Void;},
+          ECTYPE:{var em:EntityManager;}>
 {
-    public static var EM:EntityManager; // remove !
     var em:EntityManager;
     var ec:ECTYPE;
-    var enhwot:Enh2<ROOTTYPE, ECTYPE>;
-    var root:ROOTTYPE;
-
-    var _enh:Enh;
+    var enhwot:Enh<ROOTTYPE, ECTYPE>;
+    var root:ROOTTYPE;  // ALLOWS ACCESS TO SYSTEM MANAGER
 
     var oldTime:Float;
     var accumulator:Float;
     var rate:Float;
     var loopFunc:Void->Void;
 
-    // TODO : clean up this mess
     public function new(root:ROOTTYPE, entityCreatorType:Class<ECTYPE>)
     {
         this.root = root;
-        Enh2.EM = new EntityManager();
-        this.em = Enh2.EM;
+        this.em = new EntityManager();
         this.ec = Type.createInstance(entityCreatorType, []);
-        this.ec.em = Enh2.EM;
-        this.enhwot = this; // allows root to also _processRPCs correctly
+        this.ec.em = em;
+        this.enhwot = this; // allows root to  _processRPCs like Systems
 
-        // Only only used as a helper to reach ec & em without type parameter
-        this._enh = new Enh(Enh2.EM, cast ec);
         #if server
-        this.net = _enh.manager;
+        this.net = new ServerManager(em, cast ec);
         #end
 
         #if client
-        socket = new Socket(this._enh);
+        this.net = new ClientManager(em, cast ec);
+        this.socket = new Socket(net);
+        this.net.socket = socket;
         #end
 
-        root.init();
+        root.init(); // mhhh ?
     }
 
     public function addSystem<U>(systemClass:Class<U>):U
     {
         var system:U = Type.createEmptyInstance(systemClass);
 
-        Reflect.setField(system, "em", Enh2.EM);
+        Reflect.setField(system, "em", em);
         Reflect.setField(system, "root", root);
         Reflect.setField(system, "enhwot", this);  // enh ? neko ?
         Reflect.setField(system, "ec", ec);
         #if server
-        Reflect.setField(system, "net", _enh.manager);
+        Reflect.setField(system, "net", net);
         #end
         Reflect.callMethod(system, Reflect.field(system, "init"), []);
 
@@ -192,17 +188,17 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
         while(accumulator >= rate)
         {
-            if(socket.connected) socket.pumpIn();
+            socket.pumpIn();
             loopFunc();
-            if(socket.connected) socket.pumpOut();
+            socket.pumpOut();
             
             accumulator -= rate;
         }
     }
 
     #if client
-    public var socket:ISocketClient;
-    // public var net:Dynamic;
+    public var socket:Socket;
+    public var net:ClientManager;
 
     public function connect(ip:String, port:Int)
     {
@@ -222,7 +218,6 @@ class Enh2<ROOTTYPE:{function init():Void;},
 
     #if server
     public var socket:ServerSocket;
-
     public var net:ServerManager;
 
     public function startLoop(loopFunc:Void -> Void, rate:Float)
@@ -232,59 +227,24 @@ class Enh2<ROOTTYPE:{function init():Void;},
         this.rate = rate;
         this.loopFunc = loopFunc;
 
+        #if (cpp || neko)
         while(true)
         {
             step();
-
-            Sys.sleep(rate/2);  // For CPU : Ugly isn't it :3
+            Sys.sleep(rate / 2);  // For CPU : Ugly isn't it :3
         }
+
+        #elseif js
+        var timer = new haxe.Timer(Std.int(1000 * rate/2));
+        timer.run = step.bind();
+        #end
     }
 
     public function startServer(address:String, port:Int)
     {
-        trace("startserver ");
-        this.socket = new ServerSocket(address, port, this._enh);
-        net.socket = socket;
+        this.socket = new ServerSocket(address, port, net);
+        this.net.socket = socket;
         return socket;
     }
     #end
 }
-
-class Wot
-{
-    public function new(){this.lel();}
-
-    public function lel()
-    {
-        trace("lel " + Type.typeof(this));
-    }
-}
-
-// Non exposed
-class Enh
-{
-    public static var em:EntityManager; // migrate to Enh2>Enh
-    public var ec:EntityCreatowr;
-    #if client
-    public var manager:ClientManager;
-    #end
-    #if server
-    public var manager:ServerManager;
-    #end
-
-    public function new(em, ec)
-    {
-        trace("ENH " + Type.typeof(Enh) + " / " + Type.typeof(Wot));
-        Enh.em = em;
-        this.ec = ec;
-
-        #if server
-        trace("manager");
-        manager = new ServerManager(this);
-        #end
-        #if client
-        manager = new ClientManager(this);
-        #end
-    }
-}
-

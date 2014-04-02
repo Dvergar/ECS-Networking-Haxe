@@ -19,7 +19,6 @@ class MacroTest
     static public var componentsMsgType:Map<String, Array<String>> = new Map();
     static public var networkComponents:Array<String> = new Array();
     static public var syncComponentsByEntityId:Array<Array<String>> = new Array();
-    // static public var networkVariables:Array<NetworkVariable> = new Array();
 
     public static inline function toUpperCaseFirst(value:String):String
     {
@@ -38,9 +37,11 @@ class MacroTest
         return entityIds;
     }
 
+    // BUILDS AN ENTITY->COMPONENT MAP
     macro static public function buildMap():Array<haxe.macro.Field>
     {
-        // trace("############# buildMap #############");
+        trace("############# BUILDMAP #############");
+
         var fields = Context.getBuildFields();
         var cls = Context.getLocalClass().get();
         var pos = Context.currentPos();
@@ -48,35 +49,40 @@ class MacroTest
         // RPC
         fields = RPCMacro._processRPCs(fields);
 
-        // GRAB DATAS AND FEED ARRAYS (TODO : pattern matching !!!)
+        // GRAB DATAS AND FEED ARRAYS
         var entitiesMethodsById:Array<String> = [];
         var entitiesComponentMap:Array<Array<String>> = [];  // type id to be explicit
 
+        // FOR EACH CLASS FIELD
         for (f in fields)
         {
+            // IF META ON METHOD
             if(f.meta.length != 0)
             {
+                // FOR EACH META
                 for(m in f.meta)
                 {
+                    // IF META IS @NETWORKED
                     if(m.name == "networked")
                     {
                         // trace("METHOD " + f.name);
                         var methodName = f.name;
 
+                        // ASSIGN ID
                         getEntityId();
+                        // SAVES UP METHOD NAME ATTACHED TO ENTITY ID
                         entitiesMethodsById.push(methodName);
-                        var syncComponents:Array<String> = new Array();
 
-                        trace("\n\nTESTOR\n\n");
+                        // GRABS SYNCHRONIZED COMPONENTS
+                        var syncComponents:Array<String> = new Array();
 
                         switch(f.kind)
                         {
                             case FFun(fun):
                                 // trace("fun " + fun);
 
+                                // FIND ALL ADDCOMPONENT
                                 var components:Array<String> = [];
-
-                                // ALL COMPONENTS
                                 function findComponent(e:Expr)
                                 {
                                     switch(e.expr) { 
@@ -87,14 +93,14 @@ class MacroTest
                                         case _: haxe.macro.ExprTools.iter(e, findComponent); 
                                     }
                                 }
-
                                 findComponent(fun.expr);
+
+                                // ATTACH LIST OF COMPONENTS TO ENTITY
                                 entitiesComponentMap.push(components);
                                 trace("entitiesComponentMap " + entitiesComponentMap);
 
-                                // SYNC COMPONENTS
+                                // FIND SYNC COMPONENTS
                                 components = [];
-
                                 function findSyncComponent(e:Expr) { 
                                     switch(e.expr) { 
                                         case EMeta(a, b):
@@ -105,16 +111,20 @@ class MacroTest
                                         case _: haxe.macro.ExprTools.iter(e, findSyncComponent); 
                                     }
                                 }
-
                                 findSyncComponent(fun.expr);
+
+                                // ADD SYNC COMPONENTS TO LIST
                                 syncComponents = syncComponents.concat(components);
+
+                                // ADD SYNC COMPONENTS LIST TO ENTITY MAP
                                 syncComponentsByEntityId.push(syncComponents);
+
+                                // DEBUG
                                 trace("synccomponents " + syncComponents + " / " + components);
                                 trace("metasync " + syncComponentsByEntityId);
 
                             default:
                         }
-
 
                         trace("\n\n#######\n\n");
                     }
@@ -299,7 +309,6 @@ class MacroTest
                     {
                         trace("m " + m);
                         // trace("added " + m.name + " / " + f.name);
-                        // varTypeByVarName[f.name] = m.name;
                         var netVar = {name:f.name, type:m.name, redirection:null};
 
                         if(m.params.length != 0)
@@ -327,7 +336,6 @@ class MacroTest
         // trace("pre varTypeByVarName : " + varTypeByVarName);
         trace("pre networkVariables : " + networkVariables);
 
-
         // ID
         var id = getComponentId();
         networkComponents[id] = componentName;
@@ -349,15 +357,12 @@ class MacroTest
         var inExprlist = [];
         var outExprlist = [];
 
-        // for(varName in varTypeByVarName.keys())
         for(netVar in networkVariables)
         {
             var varNameOut = netVar.name;
             var varNameIn = netVar.name;
             if(netVar.redirection != null) varNameIn = netVar.redirection;
             var varType = netVar.type;
-            // var varType = varTypeByVarName.get(varName);
-            // var varType = varTypeByVarName.get(varName);
 
             var ein;
             var eout;
@@ -373,13 +378,7 @@ class MacroTest
             {
                 case "short":
                     eout = macro ba.writeInt16($i{varNameOut});
-
                     ein = macro $i{varNameIn} = ba.readInt16();
-                    // #if neko
-                    // eout = macro ba.writeShort(try Std.int($i{netVar}) catch(e:Dynamic) 0);
-                    // #else
-                    // #end
-
                 case "int":
                     eout = macro ba.writeInt32($i{varNameOut});
                     ein  = macro $i{varNameIn} = ba.readInt32();
@@ -392,9 +391,7 @@ class MacroTest
                     ein  = macro $i{varNameIn} = ba.readFloat();
                 case "bool":
                     eout = macro ($i{varNameOut} == true) ? ba.writeByte(1) : ba.writeByte(0);
-                    // eout = macro ba.writeBoolean($i{varNameOut});
                     ein  = macro $i{varNameIn} = (ba.readByte() == 0) ? return false : return true;
-                    // ein  = macro $i{varNameIn} = ba.readBoolean();
             }
 
             // trace("ein " + ein);

@@ -22,7 +22,7 @@ class MouseMovementSystem extends System<Server, EntityCreator>
 }
 
 
-class Server extends Enh2<Server, EntityCreator>
+class Server extends Enh<Server, EntityCreator>
 {
     public function new()
     {

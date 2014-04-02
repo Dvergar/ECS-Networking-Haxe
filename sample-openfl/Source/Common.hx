@@ -6,8 +6,6 @@ import flash.display.Shape;
 import Client;
 #end
 
-import enh.ByteArray;
-
 
 @networked
 class CPosition extends Component
@@ -40,7 +38,7 @@ class CPepito extends Component
 }
 
 
-class EntityCreator extends EntityCreatowr
+class EntityCreator extends EntityCreatorBase
 {
     public function new() {super();}
 
