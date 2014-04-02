@@ -212,15 +212,15 @@ class RPCMacro
             serializationBlock.push(macro trace("RPC OUT " + $v{name} + " id : " + $v{rpcId}));
             serializationBlock.push(macro conn.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro conn.output.writeByte($v{rpcId}));
-            serializationBlock.push(macro trace("entityrpc " + em.getIdFromEntity(entity)));
-            serializationBlock.push(macro conn.output.writeInt32(em.getIdFromEntity(entity)));
+            serializationBlock.push(macro trace("entityrpc " + em.getIdFroEntityTemplate(entity)));
+            serializationBlock.push(macro conn.output.writeInt32(em.getIdFroEntityTemplate(entity)));
             serializationBlock.push(macro trace("plouf"));
             #elseif client
             // A longer path maybe ? Refactor dat shit
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
             serializationBlock.push(macro root.socket.connection.anette.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro root.socket.connection.anette.output.writeByte($v{rpcId}));
-            serializationBlock.push(macro root.socket.connection.anette.output.writeInt32(em.getIdFromEntity(entity)));
+            serializationBlock.push(macro root.socket.connection.anette.output.writeInt32(em.getIdFroEntityTemplate(entity)));
             #end
 
 

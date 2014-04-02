@@ -118,7 +118,7 @@ class EntityManager
         return entity;
     }
 
-    public function getIdFromEntity(entity:Entity):Int
+    public function getIdFroEntityTemplate(entity:Entity):Int
     {
         // Not safe :/
         if(entity != CONST.DUMMY)

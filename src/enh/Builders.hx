@@ -1,12 +1,15 @@
 package enh;
 
 import anette.Bytes;
+import enh.macros.EntityComponentMacro.ComponentTemplate;
+import enh.macros.EntityComponentMacro.EntityTemplate;
+
 
 typedef Entity = Int;
 typedef Short = Int;
 
 
-@:autoBuild(enh.macros.MacroTest.buildComponent())
+@:autoBuild(enh.macros.EntityComponentMacro.buildComponent())
 class Component
 {
     public function new(){}
@@ -38,32 +41,29 @@ class CId extends Component
 }
 
 
-class CType extends Component
-{
-    public var value:String;
+// class CType extends Component
+// {
+//     public var value:String;
 
-    public function new(value:String)
-    {
-        super();
-        this.value = value;
-    }
-}
+//     public function new(value:String)
+//     {
+//         super();
+//         this.value = value;
+//     }
+// }
 
 
-@:autoBuild(enh.macros.MacroTest.buildMap())
+@:autoBuild(enh.macros.EntityComponentMacro.buildMap())
 class EntityCreatorBase
 {
-    // TO-DO : God, refactor this mess with typedefs or something :'(
-    public var entityTypeIdByEntityTypeName:Map<String, Int>;
-    public var entityTypeNameById:Map<Int, String>;
-    public var functionByEntityType:Map<String, Array<Int>->Entity>;
-    public var componentsNameByEntityId:Array<Array<Int>>; // ComponentName ? Component Id !
-    public var syncComponentsNameByEntityId:Array<Array<Int>>;
-    public var networkComponents:Array<Component>;
-    public var syncedEntities:Array<Bool>;
     public var em:EntityManager;
+    public var entities:Array<EntityTemplate> = new Array();
+    public var entityIdByName:Map<String, Int> = new Map();
+    public var functionByEntityName:Map<String, Array<Int> -> Entity>;
+    public var networkComponents:Array<Component> = new Array();
 
-    public function serialize(componentType:Int, entity:Entity, output:BytesOutputEnhanced):Void
+    public function serialize(componentType:Int, entity:Entity,
+                              output:BytesOutputEnhanced):Void
     {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
@@ -71,7 +71,8 @@ class EntityCreatorBase
         component.serialize(output);
     }
 
-    public function unserialize(componentType:Int, entity:Entity, input:BytesInputEnhanced):Void
+    public function unserialize(componentType:Int, entity:Entity,
+                                input:BytesInputEnhanced):Void
     {
         var componentClass = untyped networkComponents[componentType];
         var component = em.getComponent(entity, componentClass);
@@ -89,27 +90,52 @@ class EntityCreatorBase
 
     public function new()
     {
-        var syncComponentsNameByEntityIdSerialized = haxe.Resource.getString("syncComponentsNameByEntityId");
-        syncComponentsNameByEntityId = haxe.Unserializer.run(syncComponentsNameByEntityIdSerialized);
+        var netEntitiesSerialized = haxe.Resource.getString("netEntities");
+        this.entities = haxe.Unserializer.run(netEntitiesSerialized);
+        var netComponentsSerialized = haxe.Resource.getString("netComponents");
+        var components:Array<ComponentTemplate> = 
+                                haxe.Unserializer.run(netComponentsSerialized);
 
-        var componentsNameByEntityIdSerialized = haxe.Resource.getString("componentsNameByEntityId");
-        componentsNameByEntityId = haxe.Unserializer.run(componentsNameByEntityIdSerialized);
-
-        syncedEntities = haxe.Unserializer.run(haxe.Resource.getString("syncedEntities"));
-
-        var componentsSerialized = haxe.Resource.getString("components");
-        var components:Array<String> = haxe.Unserializer.run(componentsSerialized);
-
-        this.networkComponents = new Array();
-
-        for(comp in components)
+        // PUSH COMPONENTS IDS INTO ENTITY COMPONENTS IDS
+        for(entity in entities)
         {
-            var c = Type.resolveClass(comp);
-            networkComponents.push(untyped c);
+            var keepComponents = [];
+            for(component in entity.components)
+            {
+                for(netComp in components)
+                {
+                    if(component.name == netComp.name)
+                    {
+                        component.id = netComp.id;
+                        keepComponents.push(component);
+                    }
+                }
+            }
+
+            entity.components = keepComponents; // Filter out client-side comps
         }
 
-        trace("syncComponentsNameByEntityId " + syncComponentsNameByEntityId);
-        trace("componentsNameByEntityId " + componentsNameByEntityId);
+        // FILL ARRAYS & SHIT
+        for(entity in entities)
+        {
+            entityIdByName.set(entity.name, entity.id);
+
+            for(component in entity.components)
+            {
+                entity.componentsIds.push(component.id);
+                if(component.sync == true)
+                {
+                    entity.syncComponentsIds.push(component.id);
+                    entity.sync = true;
+                }
+            }
+        }
+
+        for(component in components)
+        {
+            var c = Type.resolveClass(component.name);
+            networkComponents.push(untyped c);
+        }
     } 
 }
 
