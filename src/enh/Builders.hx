@@ -148,7 +148,7 @@ class Enh<ROOTTYPE:{function init():Void;},
 {
     var em:EntityManager;
     var ec:ECTYPE;
-    var enhwot:Enh<ROOTTYPE, ECTYPE>;
+    // var enhwot:Enh<ROOTTYPE, ECTYPE>;
     var root:ROOTTYPE;  // ALLOWS ACCESS TO SYSTEM MANAGER
 
     var oldTime:Float;
@@ -162,7 +162,7 @@ class Enh<ROOTTYPE:{function init():Void;},
         this.em = new EntityManager();
         this.ec = Type.createInstance(entityCreatorType, []);
         this.ec.em = em;
-        this.enhwot = this; // allows root to  _processRPCs like Systems
+        // this.enhwot = this; // allows root to  _processRPCs like Systems
 
         #if server
         this.net = new ServerManager(em, cast ec);
