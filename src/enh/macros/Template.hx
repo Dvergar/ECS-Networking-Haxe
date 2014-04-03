@@ -2,7 +2,7 @@ package enh.macros;
 
 import enh.macros.EventMacro;
 import enh.macros.RPCMacro;
-import enh.macros.SystemHelperMacro;
+import enh.macros.AddSystemMacro;
 
 import haxe.macro.Expr;
 import haxe.macro.Context;
@@ -16,7 +16,7 @@ class Template
 
         fields = RPCMacro._processRPCs(fields);
         fields = EventMacro._processEvents(fields);
-        fields = SystemHelperMacro._replaceMetas(fields);
+        fields = AddSystemMacro._replaceMetas(fields);
 
         return fields;
     }
@@ -27,7 +27,7 @@ class Template
 
         fields = RPCMacro._processRPCs(fields);
         fields = EventMacro._processEvents(fields);
-        fields = SystemHelperMacro._replaceMetas(fields);
+        fields = AddSystemMacro._replaceMetas(fields);
 
         return fields;
     }
