@@ -138,18 +138,10 @@ class RPCMacro
         for(i in 1...meta.params.length)
         { 
             var param = meta.params[i];
-
             args.push(param);
         }
 
         return args;
-    }
-
-    public static function getWriteByteExpression(x:Int, pos:Position):Expr
-    {
-        // conn.bytes.writeByte(x);
-        var xexpr = { expr : EConst(CInt(Std.string(x))), pos : pos };
-        return { expr : ECall({ expr : EField({ expr : EField({ expr : EConst(CIdent("conn")), pos : pos },"bytes"), pos : pos },"writeByte"), pos : pos },[xexpr]), pos : pos };
     }
 
     public static function getFunctionName(rpcName:String):String
@@ -161,6 +153,48 @@ class RPCMacro
 
         return functionName;
     }
+
+    #if macro
+    public static function filesCheck():Void
+    {
+        var prefix = "";
+        #if client
+        var prefix = "Source/";
+        #end
+        // REFACTOR with funcFunction
+        // SERVER RPCOUT TEXT
+        if( !sys.FileSystem.exists(prefix + "server_rpcsOut.txt") )
+        {
+            var rpcsOutExport:Array<RPCType> = new Array();
+
+            var fout = File.write(prefix + "server_rpcsOut.txt", false);
+            var s = haxe.Serializer.run(rpcsOutExport);
+            fout.writeString(s);
+            fout.close();
+        }
+
+        if( !sys.FileSystem.exists(prefix + "server_rpcsIn.txt") )
+        {
+            var rpcsInExport:Map<String, Array<Array<String>>> = new Map();
+
+            var fout = File.write(prefix + "server_rpcsIn.txt", false);
+            var s = haxe.Serializer.run(rpcsInExport);
+            fout.writeString(s);
+            fout.close();
+        }
+
+        // CLIENT RPCOUT TEXT
+        if( !sys.FileSystem.exists(prefix + "client_rpcsOut.txt") )
+        {
+            var rpcsOutExport:Array<RPCType> = new Array();
+
+            var fout = File.write(prefix + "client_rpcsOut.txt", false);
+            var s = haxe.Serializer.run(rpcsOutExport);
+            fout.writeString(s);
+            fout.close();
+        }
+    }
+    #end
 
     public static function _processRPCs(fields:Array<Field>):Array<haxe.macro.Field>
     {
@@ -214,13 +248,11 @@ class RPCMacro
             serializationBlock.push(macro conn.output.writeByte($v{rpcId}));
             serializationBlock.push(macro trace("entityrpc " + em.getIdFroEntityTemplate(entity)));
             serializationBlock.push(macro conn.output.writeInt32(em.getIdFroEntityTemplate(entity)));
-            serializationBlock.push(macro trace("plouf"));
             #elseif client
-            // A longer path maybe ? Refactor dat shit
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
-            serializationBlock.push(macro root.socket.connection.anette.output.writeByte($v{CONST.RPC}));
-            serializationBlock.push(macro root.socket.connection.anette.output.writeByte($v{rpcId}));
-            serializationBlock.push(macro root.socket.connection.anette.output.writeInt32(em.getIdFroEntityTemplate(entity)));
+            serializationBlock.push(macro output.writeByte($v{CONST.RPC}));
+            serializationBlock.push(macro output.writeByte($v{rpcId}));
+            serializationBlock.push(macro output.writeInt32(em.getIdFroEntityTemplate(entity)));
             #end
 
 
@@ -248,58 +280,70 @@ class RPCMacro
                 switch(argTypeString)
                 {
                     case "String":                        
-                        serializationBlock.push( macro conn.output.writeUTF($i{varName}) );
+                        serializationBlock.push(macro conn.output.writeUTF($i{varName}));
                     case "Int":
-                        serializationBlock.push( macro conn.output.writeInt32($i{varName}) );
+                        serializationBlock.push(macro conn.output.writeInt32($i{varName}));
                     case "Short":
-                        serializationBlock.push( macro conn.output.writeInt16($i{varName}) );
+                        serializationBlock.push(macro conn.output.writeInt16($i{varName}));
                     case "Bool":
-                        serializationBlock.push( macro conn.output.writeBoolean($i{varName}) );
+                        serializationBlock.push(macro conn.output.writeBoolean($i{varName}));
                 }
                 #elseif client
                 switch(argTypeString)
                 {
                     case "String":                        
-                        serializationBlock.push( macro root.socket.connection.anette.output.writeUTF($i{varName}) );
+                        serializationBlock.push(macro output.writeUTF($i{varName}));
                     case "Int":
-                        serializationBlock.push( macro root.socket.connection.anette.output.writeInt32($i{varName}) );
+                        serializationBlock.push(macro output.writeInt32($i{varName}));
                     case "Short":
-                        serializationBlock.push( macro root.socket.connection.anette.output.writeInt16($i{varName}) );
+                        serializationBlock.push(macro output.writeInt16($i{varName}));
                     case "Bool":
-                        serializationBlock.push( macro root.socket.connection.anette.output.writeBoolean($i{varName}) );
+                        serializationBlock.push(macro output.writeBoolean($i{varName}));
                 }
                 #end
             }
 
             // FILLING BLOCK
             #if client
-            funcBlock = serializationBlock;
+            funcBlock.push(macro var output = root.socket.connection.anette.output);
+            funcBlock.push(macro $a{serializationBlock});
+
             #elseif server
-            funcBlock.push( macro var connections = root.socket.gameConnections.keys() );
-            funcBlock.push( macro for(conn in connections) { $a{serializationBlock} } );
+            funcBlock.push(macro var connections = root.socket.gameConnections.keys());
+            funcBlock.push(macro for(conn in connections) {$a{serializationBlock}});
             #end
 
             // BUILD FUNCTION
             var func = {args:args, ret:null, params:[], expr:{expr:EBlock(funcBlock), pos:pos} };
-            var field = { name : functionName, doc : null, meta : [], access : [APublic], kind : FFun(func), pos : pos };
+            var field = {name: functionName,
+                         doc: null,
+                         meta: [],
+                         access: [APublic],
+                         kind: FFun(func),
+                         pos: pos};
+
             fields.push(field);
 
             trace("PRPC : " + new haxe.macro.Printer().printField(field));
         }
 
-
+        // DEBUG
         for(f in fields)
         {
             // trace("PRPC : " + new haxe.macro.Printer().printField(f));
         }
 
-        // RPC TYPING
-        pushRpcsIn(fields);
+        // RPC TYPING, push rpcs in
+        for(f in fields)
+        {
+            if(f.name.substr(0, 2) == "on")
+                rpcsIn.set(f.name, EventMacro.getMetaTypes(f.name, fields));
+        }
+
         #if client
         fields = rpcTyper(fields, pos);
         #end
 
-        // trace("NOOGA");
         // EXPORT RPC TYPES TO FILE
         haxe.macro.Context.onGenerate(function (types)
         {
@@ -360,7 +404,6 @@ class RPCMacro
         var fields = Context.getBuildFields();
         var pos = Context.currentPos();
 
-        // fields = EventMacro._processEvents(fields);
         fields = _processRPCs(fields);
 
         return fields;
@@ -370,61 +413,6 @@ class RPCMacro
     // UNSERIALIZER RPC
     /////////////////////////////////
 
-    public static function pushRpcsIn(fields:Array<Field>):Void
-    {
-        for(f in fields)
-        {
-            // if(f.name.substr(0, 5) == "onNet")
-            if(f.name.substr(0, 2) == "on")
-            {
-                // trace("PLOOM");
-                rpcsIn.set(f.name, EventMacro.getMetaTypes(f.name, fields));
-            }
-        }
-    }
-
-    #if macro
-    public static function filesCheck():Void
-    {
-        var prefix = "";
-        #if client
-        var prefix = "Source/";
-        #end
-        // REFACTOR with funcFunction
-        // SERVER RPCOUT TEXT
-        if( !sys.FileSystem.exists(prefix + "server_rpcsOut.txt") )
-        {
-            var rpcsOutExport:Array<RPCType> = new Array();
-
-            var fout = File.write(prefix + "server_rpcsOut.txt", false);
-            var s = haxe.Serializer.run(rpcsOutExport);
-            fout.writeString(s);
-            fout.close();
-        }
-
-        if( !sys.FileSystem.exists(prefix + "server_rpcsIn.txt") )
-        {
-            var rpcsInExport:Map<String, Array<Array<String>>> = new Map();
-
-            var fout = File.write(prefix + "server_rpcsIn.txt", false);
-            var s = haxe.Serializer.run(rpcsInExport);
-            fout.writeString(s);
-            fout.close();
-        }
-
-        // CLIENT RPCOUT TEXT
-        if( !sys.FileSystem.exists(prefix + "client_rpcsOut.txt") )
-        {
-            var rpcsOutExport:Array<RPCType> = new Array();
-
-            var fout = File.write(prefix + "client_rpcsOut.txt", false);
-            var s = haxe.Serializer.run(rpcsOutExport);
-            fout.writeString(s);
-            fout.close();
-        }
-    }
-    #end
-
     macro static public function addRpcUnserializeMethod():Array<haxe.macro.Field>
     {
         // trace("############# rpcUnserializer #############");
@@ -433,20 +421,20 @@ class RPCMacro
         var pos = Context.currentPos();
 
         filesCheck();
+
         #if client
-        var rpcTypes:Array<RPCType> = haxe.Unserializer.run( File.getContent("Source/server_rpcsOut.txt") );
+        var rpctypesSerialized = File.getContent("Source/server_rpcsOut.txt");
         #elseif server
-        var rpcTypes:Array<RPCType> = haxe.Unserializer.run( File.getContent("client_rpcsOut.txt") );
+        var rpctypesSerialized = File.getContent("client_rpcsOut.txt");
         #end
+        var rpcTypes:Array<RPCType> = haxe.Unserializer.run(rpctypesSerialized);
 
         var block = [];
-
         block.push(macro var rpcType = input.readByte());
         // block.push(macro trace("rpc received " + rpcType));
         block.push(macro var entity = em.getEntityFromId(input.readInt32()));
 
         var cases = [];
-
         for(rpcType in rpcTypes)
         {
             var caseBlock = [];
@@ -478,13 +466,15 @@ class RPCMacro
 
             var obj =  { expr : EObjectDecl(objFields), pos : pos };
             #if server
-            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro entity, obj];
+            var pushArgs = [{expr: EConst(CString(rpcType.name)), pos: pos},
+                            macro entity, obj];
             #elseif client
-            var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, macro entity, obj];
+            var pushArgs = [{expr : EConst(CString(rpcType.name)), pos: pos },
+                            macro entity, obj];
             #end
             // var pushArgs = [{ expr : EConst(CString(rpcType.name)), pos : pos }, { expr : EConst(CString("dummy")), pos : pos }, obj];
 
-            var pushEv = {expr : ECall({ expr : EField({ expr : EConst(CIdent("em")), pos : pos },"pushEvent"), pos : pos }, pushArgs), pos : pos}
+            var pushEv = {expr: ECall({expr: EField({expr: EConst(CIdent("em")), pos: pos}, "pushEvent"), pos: pos}, pushArgs), pos : pos}
             caseBlock.push(pushEv);
             var rpcCase = { expr: { expr: EBlock(caseBlock), pos:pos } , values:[macro $v{rpcType.id}], guard:null };
             cases.push(rpcCase);
@@ -516,7 +506,8 @@ class RPCMacro
     // TYPER RPC
     /////////////////////////////////
 
-    static public function compareRPCTypes(host:Int, rpcs0ut:Array<RPCType>, rpcs1n:Map<String, Array<Array<String>>>)
+    static public function compareRPCTypes(host:Int, rpcs0ut:Array<RPCType>,
+                                           rpcs1n:Map<String, Array<Array<String>>>)
     {
         // COMPARE TYPES
         for(rpcOut in rpcs0ut)
