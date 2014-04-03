@@ -112,7 +112,7 @@ class EntityManager
 
     public function getIdFromEntity(entity:Entity):Int
     {
-        // RPCS need an idea no matter what
+        // RPCS need an id no matter what
         (entity != CONST.DUMMY) ?
             return getComponent(entity, CId).value:
             return CONST.DUMMY;
