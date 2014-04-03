@@ -18,7 +18,7 @@ class ServerSocket
     public function new(address:String, port:Int, manager:ServerManager)
     {
         this.manager = manager;
-        connectionIds = new IdManager(32);
+        connectionIds = new IdManager(32);  // Careful i don't put them back in
 
         server = new anette.Server(address, port);
         server.onData = onData;

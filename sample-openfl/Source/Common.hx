@@ -10,8 +10,10 @@ import Client;
 @networked
 class CPosition extends Component
 {
-    @short public var x:Int;
-    @short public var y:Int;
+    @short("netx") public var x:Float;
+    @short("nety") public var y:Float;
+    public var netx:Float;
+    public var nety:Float;
 
     public function new(x:Int, y:Int)
     {

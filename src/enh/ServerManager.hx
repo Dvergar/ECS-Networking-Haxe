@@ -125,6 +125,7 @@ class ServerManager
         return component;
     }
 
+    // TODO : pass anonymous object
     public function createNetworkEntity(entityType:String,
                                         ?owner:Entity,
                                         ?args:Array<Int>,

@@ -7,6 +7,7 @@ import enh.macros.EntityComponentMacro.EntityTemplate;
 
 typedef Entity = Int;
 typedef Short = Int;
+typedef LoopDatas = {loopFunction: Void->Void, gameRate: Float, netRate: Float}
 
 
 @:autoBuild(enh.macros.EntityComponentMacro.buildComponent())
@@ -39,18 +40,6 @@ class CId extends Component
         this.value = value;
     }
 }
-
-
-// class CType extends Component
-// {
-//     public var value:String;
-
-//     public function new(value:String)
-//     {
-//         super();
-//         this.value = value;
-//     }
-// }
 
 
 @:autoBuild(enh.macros.EntityComponentMacro.buildMap())
@@ -163,9 +152,9 @@ class Enh<ROOTTYPE:{function init():Void;},
     var root:ROOTTYPE;  // ALLOWS ACCESS TO SYSTEM MANAGER
 
     var oldTime:Float;
+    var oldNetTime:Float;
     var accumulator:Float;
-    var rate:Float;
-    var loopFunc:Void->Void;
+    var loopDatas:LoopDatas;
 
     public function new(root:ROOTTYPE, entityCreatorType:Class<ECTYPE>)
     {
@@ -212,13 +201,18 @@ class Enh<ROOTTYPE:{function init():Void;},
         accumulator += frameTime;
         oldTime = newTime;
 
-        while(accumulator >= rate)
+        while(accumulator >= loopDatas.gameRate)
         {
             socket.pumpIn();
-            loopFunc();
-            socket.pumpOut();
+            loopDatas.loopFunction();
             
-            accumulator -= rate;
+            accumulator -= loopDatas.gameRate;
+        }
+
+        if(newTime - oldNetTime > loopDatas.netRate)
+        {
+            socket.pumpOut();
+            oldNetTime = newTime;
         }
     }
 
@@ -231,12 +225,12 @@ class Enh<ROOTTYPE:{function init():Void;},
         socket.connect(ip, port);
     }
 
-    public function startLoop(loopFunc:Void -> Void, rate:Float)
+    public function startLoop(loopDatas:LoopDatas)
     {
         this.oldTime = Timer.getTime();
+        this.oldNetTime = Timer.getTime();
         this.accumulator = 0;
-        this.rate = rate;
-        this.loopFunc = loopFunc;
+        this.loopDatas = loopDatas;
 
         Loop.startLoop(step);
     }
@@ -246,22 +240,22 @@ class Enh<ROOTTYPE:{function init():Void;},
     public var socket:ServerSocket;
     public var net:ServerManager;
 
-    public function startLoop(loopFunc:Void -> Void, rate:Float)
+    public function startLoop(loopDatas:LoopDatas)
     {
         this.oldTime = Timer.getTime();
+        this.oldNetTime = Timer.getTime();
         this.accumulator = 0;
-        this.rate = rate;
-        this.loopFunc = loopFunc;
+        this.loopDatas = loopDatas;
 
         #if (cpp || neko)
         while(true)
         {
             step();
-            Sys.sleep(rate / 2);  // For CPU : Ugly isn't it :3
+            Sys.sleep(loopDatas.gameRate / 2);  // For CPU : Ugly isn't it :3
         }
 
         #elseif js
-        var timer = new haxe.Timer(Std.int(1000 * rate/2));
+        var timer = new haxe.Timer(Std.int(1000 * rate / 2));
         timer.run = step.bind();
         #end
     }

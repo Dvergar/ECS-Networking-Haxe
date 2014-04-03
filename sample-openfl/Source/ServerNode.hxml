@@ -1,0 +1,10 @@
+-main Server.hx
+-js _server.js
+-cp ../../src
+-D server
+-D nodejs
+-lib anette
+-lib nodejs
+-debug
+
+-cmd "node _server.js"

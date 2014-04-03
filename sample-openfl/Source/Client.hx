@@ -77,6 +77,24 @@ class DrawableSystem extends System<Client, EntityCreator>
 }
 
 
+class InterpolationSystem extends System<Client, EntityCreator>
+{
+    public function init() {}
+
+    public function processEntities()
+    {
+        var allPositions = em.getEntitiesWithComponent(CPosition);
+        for(entity in allPositions)
+        {
+            var position = em.getComponent(entity, CPosition);
+
+            position.x += (position.netx - position.x) * 0.3;
+            position.y += (position.nety - position.y) * 0.3;
+        }
+    }
+}
+
+
 class Client extends Enh<Client, EntityCreator>
 {
     var pingTime:Float;
@@ -94,13 +112,14 @@ class Client extends Enh<Client, EntityCreator>
 
         @addSystem DrawableSystem;
         @addSystem InputSystem;
+        @addSystem InterpolationSystem;
 
         @registerListener "HI";
         @registerListener "CONNECTION";
         @registerListener "DISCONNECTION";
         @registerListener "SQUARE_CREATE";
 
-        startLoop(loop, 1 / 60);
+        startLoop({loopFunction: loop, gameRate: 1/60, netRate: 1/20});
     }
 
     private function onSquareCreate(entity:Entity, ev:Dynamic)
@@ -133,13 +152,7 @@ class Client extends Enh<Client, EntityCreator>
 
     private function loop()
     {
-        // trace(enh.socket.connected);
         drawableSystem.processEntities();
-
-        // if(Timer.getTime() - pingTime > 1)
-        // {
-        //     @RPC("PING", CONST.DUMMY) {};
-        //     pingTime = Timer.getTime();
-        // }
+        interpolationSystem.processEntities();
     }
 }

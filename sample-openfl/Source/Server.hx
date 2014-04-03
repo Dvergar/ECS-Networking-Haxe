@@ -31,7 +31,7 @@ class Server extends Enh<Server, EntityCreator>
 
     public function init()
     {
-        this.startServer("192.168.1.4", 32000);
+        startServer("192.168.1.4", 32000);
 
         @addSystem MouseMovementSystem;
 
@@ -40,7 +40,7 @@ class Server extends Enh<Server, EntityCreator>
         @registerListener "DISCONNECTION";
         @registerListener "HELLO";
 
-        this.startLoop(loop, 1/60);
+        startLoop({loopFunction: loop, gameRate: 1/60, netRate: 1/20});
 
     }
 
