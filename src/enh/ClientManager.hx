@@ -2,6 +2,7 @@ package enh;
 
 import enh.Constants;
 import enh.Builders;
+import enh.EntityManager;
 import anette.Bytes;
 
 

@@ -1,4 +1,4 @@
-// import enh.EntityManager;
+import enh.EntityManager;
 import enh.Builders;
 
 #if (flash || openfl)

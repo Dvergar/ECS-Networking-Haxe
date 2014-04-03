@@ -1,11 +1,11 @@
 package enh;
 
+import enh.EntityManager;
 import anette.Bytes;
 import enh.macros.EntityComponentMacro.ComponentTemplate;
 import enh.macros.EntityComponentMacro.EntityTemplate;
 
 
-typedef Entity = Int;
 typedef Short = Int;
 typedef LoopDatas = {loopFunction: Void->Void, gameRate: Float, netRate: Float}
 

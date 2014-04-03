@@ -3,6 +3,7 @@ package enh;
 import enh.Builders;
 import enh.Tools;
 import enh.Constants;
+import enh.EntityManager;
 
 import anette.Bytes;
 
@@ -101,7 +102,7 @@ class ServerManager
         for(conn in connectionsByEntity)
         {
             conn.anette.output.writeByte(CONST.ADD_COMPONENT);
-            conn.anette.output.writeInt16(em.getIdFroEntityTemplate(entity));
+            conn.anette.output.writeInt16(em.getIdFromEntity(entity));
             conn.anette.output.writeInt16(c._id);
             // ec.serialize(c._id, entity, conn.output);
         }
@@ -118,7 +119,7 @@ class ServerManager
         for(conn in connectionsByEntity)
         {
             conn.anette.output.writeByte(CONST.ADD_COMPONENT2);
-            conn.anette.output.writeInt16(em.getIdFroEntityTemplate(entity));
+            conn.anette.output.writeInt16(em.getIdFromEntity(entity));
             conn.anette.output.writeInt16(c._id);
             ec.serialize(c._id, entity, conn.anette.output);
         }
@@ -155,7 +156,7 @@ class ServerManager
         else
         {
             netEntity.owner = owner;
-            netEntity.ownerId = em.getIdFroEntityTemplate(owner);
+            netEntity.ownerId = em.getIdFromEntity(owner);
         }
 
         netEntityByEntity.set(entity, netEntity);

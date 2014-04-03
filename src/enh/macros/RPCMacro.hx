@@ -246,13 +246,13 @@ class RPCMacro
             serializationBlock.push(macro trace("RPC OUT " + $v{name} + " id : " + $v{rpcId}));
             serializationBlock.push(macro conn.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro conn.output.writeByte($v{rpcId}));
-            serializationBlock.push(macro trace("entityrpc " + em.getIdFroEntityTemplate(entity)));
-            serializationBlock.push(macro conn.output.writeInt32(em.getIdFroEntityTemplate(entity)));
+            serializationBlock.push(macro trace("entityrpc " + em.getIdFromEntity(entity)));
+            serializationBlock.push(macro conn.output.writeInt32(em.getIdFromEntity(entity)));
             #elseif client
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
             serializationBlock.push(macro output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro output.writeByte($v{rpcId}));
-            serializationBlock.push(macro output.writeInt32(em.getIdFroEntityTemplate(entity)));
+            serializationBlock.push(macro output.writeInt32(em.getIdFromEntity(entity)));
             #end
 
 

@@ -63,7 +63,7 @@ class Server extends SystemManager<Server, EntityCreator>
         net.setConnectionEntityFromTo(connectionEntity, square);
         net.sendWorldStateTo(square);
 
-        trace("square net id " + em.getIdFroEntityTemplate(square));
+        trace("square net id " + em.getIdFromEntity(square));
         trace("onConnection " + connectionEntity);
 
         @RPC("HI", CONST.DUMMY, "hi") {msg:String};

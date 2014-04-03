@@ -14,6 +14,7 @@ import flash.utils.ByteArray;
 import enh.Builders;
 import enh.Timer;
 import enh.Constants;
+import enh.EntityManager;
 
 import Common;
 

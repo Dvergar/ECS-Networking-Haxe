@@ -5,33 +5,29 @@ import enh.macros.Template;
 import enh.Builders;
 import enh.Constants;
 
+
 typedef ComponentType = String;
 typedef EventType = String;
+typedef Entity = Int;
 
 
 class EntityManager
 {
-    var componentStores:Map<ComponentType, Map<Entity, Component>>;
-    var listenerTypes:Map<EventType, Array<Dynamic>>;
-    var killables:List<Entity>;
-    public var entitiesById:Map<Int, Entity>; // switch to private, was just for ld debugging
+    var componentStores:Map<ComponentType, Map<Entity, Component>> = new Map();
+    var listenerTypes:Map<EventType, Array<Dynamic>> = new Map<ComponentType, Array<Dynamic>>();
+    var killables:List<Entity> = new List<Entity>();
+    var entitiesById:Map<Int, Entity> = new Map<Int, Entity>();
     var ids:Int;
     var entityIds:Int;
 
     public function new()
     {
-        this.componentStores = new Map();
-        this.listenerTypes = new Map<ComponentType, Array<Dynamic>>();
-        this.entitiesById = new Map<Int, Entity>();
-        this.killables = new List<Entity>();
         this.ids = 0;
         this.entityIds = 0;
     }
 
     public function createEntity()
     {
-        // var id = Uuid.uuid();
-        // return id;
         return entityIds++;
     }
 
@@ -63,9 +59,9 @@ class EntityManager
         var success = true;
         if(event == null)
         {
-            for(f in listeners)
+            for(func in listeners)
             {
-                if(f(entity) == false)
+                if(func(entity) == false)
                 {
                     trace("event blocked 1");
                     success = false;
@@ -75,9 +71,9 @@ class EntityManager
         }
         else
         {
-            for(f in listeners)
+            for(func in listeners)
             {
-                if(f(entity, event) == false) 
+                if(func(entity, event) == false) 
                 {
                     trace("event blocked 2");
                     success = false;
@@ -101,10 +97,8 @@ class EntityManager
 
     public function setId(entity:Entity, ?id:Int):Int
     {
-        if(id == null)
-        {
-            id = ids++;
-        }
+        if(id == null) id = ids++;
+
         entitiesById.set(id, entity);
         addComponent(entity, new CId(id));
 
@@ -113,27 +107,19 @@ class EntityManager
 
     public function getEntityFromId(id:Int):Entity
     {
-        var entity = entitiesById.get(id);
-        // if(entity == null) throw("no entity with id " + id);
-        return entity;
+        return entitiesById.get(id);
     }
 
-    public function getIdFroEntityTemplate(entity:Entity):Int
+    public function getIdFromEntity(entity:Entity):Int
     {
-        // Not safe :/
-        if(entity != CONST.DUMMY)
-        {
-            return getComponent(entity, CId).value;
-        }
-        else
-        {
-            return entity;
-        }
+        // RPCS need an idea no matter what
+        (entity != CONST.DUMMY) ?
+            return getComponent(entity, CId).value:
+            return CONST.DUMMY;
     }
 
     public function addComponent<T>(entity:Entity, component:T):T
     {
-        if(entity == -1) throw "Entity can't be null";
         var className:String = Type.getClassName(Type.getClass(component));
         var store:Map<Entity, Component> = componentStores.get(className);
 
@@ -167,25 +153,21 @@ class EntityManager
 
         // DEBUG
         if(!hasComponent(entity, componentClass))
-        {
             throw("Remove failed : " + componentClass + 
                     " is not associated to the entity " + entity);
-        }
 
         store.get(entity)._detach();
         store.remove(entity);
     }
 
-    public function getAllComponentsOfType<T>(componentClass:Class<T>)
+    public function getComponentsOfType<T>(componentClass:Class<T>)
                                             :Iterator<T>
     {
         var className = Type.getClassName(componentClass);
         var store:Map<Entity, Component> = componentStores.get(className);
 
         if(store == null)
-        {
             return new Map<Entity, T>().iterator();
-        }
 
         return cast store.iterator();
     }
@@ -195,20 +177,16 @@ class EntityManager
         var className = Type.getClassName(componentClass);
         var store:Map<Entity, Component> = componentStores.get(className);
 
-        if (store == null)
-        {
+        if(store == null)
             throw("GET FAIL: there are no entities with a Component of class: "
                             + componentClass);
-        }
 
         var result:Component = store.get(entity);
 
-        if (result == null)
-        {
+        if(result == null)
             throw("GET FAIL: " + entity
                     + " does not possess Component of class\n   missing: "
                     + componentClass);
-        }
 
         return cast result;
     }
@@ -220,9 +198,7 @@ class EntityManager
         var store:Map<Entity, Component> = componentStores.get(className);
 
         if(store == null)
-        {
             return new Map<Entity, Component>().keys();
-        }
 
         return store.keys();
     }
@@ -252,19 +228,6 @@ class EntityManager
                 componentStore.remove(entity);
             }
         }
-
-
-        // PARENT CHILD
-        // var children = parentChild.get(entity);
-
-        // if(children != null) {
-        //     for(child in children)
-        //     {
-        //         killEntity(child);
-        //     }
-        // }
-
-        // parentChild.remove(entity);
     }
 
     public function processKills()
@@ -296,14 +259,9 @@ class EntityManager
         var className = Type.getClassName(componentClass);
         var store:Map<Entity, Component> = componentStores.get(className);
 
-        if(store == null)
-        {
-            return false;
-        }
-        else
-        {
+        (store == null) ?
+            return false:
             return store.exists(entity);
-        }
     }
 
     public function debugGetComponentsStringOfEntity(entity:Entity):String
