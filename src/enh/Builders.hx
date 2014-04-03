@@ -143,7 +143,7 @@ class System<ROOTTYPE, ECTYPE>
 
 
 @:autoBuild(enh.macros.Template.main())
-class Enh<ROOTTYPE:{function init():Void;},
+class SystemManager<ROOTTYPE:{function init():Void;},
           ECTYPE:{var em:EntityManager;}>
 {
     var em:EntityManager;

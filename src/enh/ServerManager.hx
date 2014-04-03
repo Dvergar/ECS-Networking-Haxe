@@ -109,6 +109,7 @@ class ServerManager
         return component;
     }
 
+    // Yeah i know, temp
     public function addComponent2<T:{var _id:Int;}>(entity:Entity, component:T):T
     {
         var c = em.addComponent(entity, component);

@@ -254,6 +254,7 @@ class EventMacro
         // HELPERS + TYPEDEF
         typeEvents(fields);
 
+        // DEBUG
         // for(f in fields)
         // {
         //     trace("honk : " + new haxe.macro.Printer().printField(f));
@@ -268,8 +269,6 @@ class EventMacro
         var fields:Array<haxe.macro.Field> = Context.getBuildFields();
 
         _processEvents(fields);
-
-
 
         return fields;
     }

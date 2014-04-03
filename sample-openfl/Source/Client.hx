@@ -95,7 +95,7 @@ class InterpolationSystem extends System<Client, EntityCreator>
 }
 
 
-class Client extends Enh<Client, EntityCreator>
+class Client extends SystemManager<Client, EntityCreator>
 {
     var pingTime:Float;
     public static var myEntity:Entity = -1;
