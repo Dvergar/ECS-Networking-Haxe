@@ -191,7 +191,12 @@ class SystemManager<ROOTTYPE:{function init():Void;},
         return system;
     }
 
+    // TODO : Clean up
+    #if js
+    function step()
+    #else
     function step(?dummy)
+    #end
     {
         // FIXED TIME STEP
         var newTime = Timer.getTime();
@@ -253,8 +258,8 @@ class SystemManager<ROOTTYPE:{function init():Void;},
         }
 
         #elseif js
-        var timer = new haxe.Timer(Std.int(1000 * rate / 2));
-        timer.run = step.bind();
+        var timer = new haxe.Timer(Std.int(1000 * loopDatas.gameRate));
+        timer.run = step;
         #end
     }
 

@@ -242,12 +242,14 @@ class RPCMacro
 
             // CALLED FROM A SYSTEM
             #if server
+
             serializationBlock.push(macro trace("entity out " + entity));
             serializationBlock.push(macro trace("RPC OUT " + $v{name} + " id : " + $v{rpcId}));
             serializationBlock.push(macro conn.output.writeByte($v{CONST.RPC}));
             serializationBlock.push(macro conn.output.writeByte($v{rpcId}));
             serializationBlock.push(macro trace("entityrpc " + em.getIdFromEntity(entity)));
             serializationBlock.push(macro conn.output.writeInt32(em.getIdFromEntity(entity)));
+            serializationBlock.push(macro trace("serializing0 " + conn.output.length));
             #elseif client
             // serializationBlock.push(macro trace("socket output " + enh.socket.conn));
             serializationBlock.push(macro output.writeByte($v{CONST.RPC}));
@@ -277,14 +279,15 @@ class RPCMacro
 
                 // SERIALIZATION
                 #if server
+                // serializationBlock.push(macro trace("serializing " + $i{varName} + " / " + conn.output.length));
                 switch(argTypeString)
                 {
-                    case "String":                        
+                    case "String":
                         serializationBlock.push(macro conn.output.writeUTF($i{varName}));
                     case "Int":
-                        serializationBlock.push(macro conn.output.writeInt32($i{varName}));
+                        serializationBlock.push(macro conn.output.writeInt32(Std.int($i{varName})));
                     case "Short":
-                        serializationBlock.push(macro conn.output.writeInt16($i{varName}));
+                        serializationBlock.push(macro conn.output.writeInt16(Std.int($i{varName})));
                     case "Bool":
                         serializationBlock.push(macro conn.output.writeBoolean($i{varName}));
                 }
@@ -294,9 +297,9 @@ class RPCMacro
                     case "String":                        
                         serializationBlock.push(macro output.writeUTF($i{varName}));
                     case "Int":
-                        serializationBlock.push(macro output.writeInt32($i{varName}));
+                        serializationBlock.push(macro output.writeInt32(Std.int($i{varName})));
                     case "Short":
-                        serializationBlock.push(macro output.writeInt16($i{varName}));
+                        serializationBlock.push(macro output.writeInt16(Std.int($i{varName})));
                     case "Bool":
                         serializationBlock.push(macro output.writeBoolean($i{varName}));
                 }
