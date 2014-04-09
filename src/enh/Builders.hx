@@ -134,7 +134,6 @@ class System<ROOTTYPE, ECTYPE>
 {
     public var em:EntityManager;
     public var root:ROOTTYPE;
-    public var enhwot:ROOTTYPE;
     public var ec:ECTYPE;
     #if server
     public var net:ServerManager;
@@ -181,7 +180,6 @@ class SystemManager<ROOTTYPE:{function init():Void;},
 
         Reflect.setField(system, "em", em);
         Reflect.setField(system, "root", root);
-        Reflect.setField(system, "enhwot", this);  // enh ? neko ?
         Reflect.setField(system, "ec", ec);
         #if server
         Reflect.setField(system, "net", net);

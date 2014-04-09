@@ -6,6 +6,8 @@ import flash.display.Shape;
 import Client;
 #end
 
+// TODO : remove super() ?
+
 
 @networked
 class CPosition extends Component

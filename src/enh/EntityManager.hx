@@ -49,7 +49,7 @@ class EntityManager
         listeners.push(f);
     }
 
-    public function pushEvent(eventName:EventType, entity:Entity,
+    public function pushEvent(eventName:EventType, ?entity:Entity,
                               ?event:Dynamic, ?cb:Dynamic)
     {
         // trace("pushEvent " + eventName);
