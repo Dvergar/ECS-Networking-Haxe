@@ -11,20 +11,20 @@ import anette.Client;
 
 class Socket
 {
-	public var connection:Connection;
-	public var connected:Bool;
+    public var connection:Connection;
+    public var connected:Bool;
     private var socket:flash.net.Socket;
     var client:anette.Client;
     var manager:ClientManager;
 
-	public function new(manager:ClientManager)
-	{
+    public function new(manager:ClientManager)
+    {
         this.manager = manager;
         this.client = new Client();
         client.onConnection = onConnection;
         client.onData = onData;
         client.onDisconnection = onDisconnection;
-	}
+    }
 
     function onData(anconnection:anette.Connection)
     {
@@ -44,11 +44,11 @@ class Socket
         connected = false;
     }
 
-	public function connect(ip:String, port:Int)
-	{
-		trace("connect");
+    public function connect(ip:String, port:Int)
+    {
+        trace("connect");
         client.connect(ip, port);
-	}
+    }
 
     public function pumpIn()
     {
