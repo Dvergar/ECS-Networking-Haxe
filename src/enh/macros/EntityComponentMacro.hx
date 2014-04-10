@@ -151,25 +151,30 @@ class EntityComponentMacro
         for(entity in netEntities)
         {
             var fname = entity.name;
-            exprsFunctionByEntityName.push({expr: EBinop(OpArrow, {expr: EConst(CString(fname)), pos : pos },{ expr : EConst(CIdent(fname)), pos : pos }), pos : pos});
+            exprsFunctionByEntityName.push({expr: EBinop(OpArrow, {expr: EConst(CString(fname)), pos: pos}, {expr: EConst(CIdent(fname)), pos: pos}), pos: pos});
             entityId++;
         }
 
         // DECLARATION ENTITYFUNCTIONSMAP
-        for(f in fields)
+        if(exprsFunctionByEntityName.length != 0)
         {
-            if(f.name == "new")
+            for(f in fields)
             {
-                switch(f.kind){
-                    case FFun(fun):
-                        switch(fun.expr.expr)
-                        {
-                            case EBlock(block):
-                                block.insert(0, { expr : EBinop(OpAssign,{ expr : EConst(CIdent("functionByEntityName")), pos : pos },{ expr : EArrayDecl(exprsFunctionByEntityName), pos : pos }), pos : pos });
-                            default:
-                        }
+                if(f.name == "new")
+                {
+                    switch(f.kind){
+                        case FFun(fun):
+                            switch(fun.expr.expr)
+                            {
+                                case EBlock(block):
+                                    block.insert(0, {expr: EBinop(OpAssign, {expr: EConst(CIdent("functionByEntityName")), pos: pos},
+                                                                            {expr: EArrayDecl(exprsFunctionByEntityName), pos: pos}),
+                                                                  pos: pos});
+                                default:
+                            }
 
-                    default:
+                        default:
+                    }
                 }
             }
         }

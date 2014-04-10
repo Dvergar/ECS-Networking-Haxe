@@ -13,7 +13,6 @@ typedef LoopDatas = {loopFunction: Void->Void, gameRate: Float, netRate: Float}
 @:autoBuild(enh.macros.EntityComponentMacro.buildComponent())
 class Component
 {
-    public function new(){}
     public function _detach(){}
 }
 
@@ -24,7 +23,6 @@ class CNetOwner extends Component
 
     public function new(id:Int)
     {
-        super();
         this.id = id;
     }
 }
@@ -36,7 +34,6 @@ class CId extends Component
 
     public function new(value:Int)
     {
-        super();
         this.value = value;
     }
 }
