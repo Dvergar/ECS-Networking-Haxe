@@ -19,7 +19,6 @@ class CPosition extends Component
 
     public function new(x:Int, y:Int)
     {
-        super();
         this.x = x;
         this.y = y;
     }
@@ -31,14 +30,14 @@ class CHealth extends Component
 {
     @short public var value:Int = 100;
 
-    public function new() {super();}
+    public function new() {}
 }
 
 
 @networked
 class CPepito extends Component
 {
-    public function new() {super();}
+    public function new() {}
 }
 
 
@@ -47,12 +46,12 @@ class EntityCreator extends EntityCreatorBase
     public function new() {super();}
 
     @networked
-    public function square(args:Array<Int>):Entity
+    public function square(datas:Dynamic):Entity
     {
-        trace("square spawn at : " + args);
+        trace("square spawn at : " + datas);
 
-        var x = args[0];
-        var y = args[1];
+        var x:Int = datas.x;
+        var y:Int = datas.y;
 
         var square = em.createEntity();
         trace("square entity " + square);

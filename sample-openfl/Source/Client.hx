@@ -27,8 +27,6 @@ class CDrawable extends Component
     public function new(displayObject:DisplayObject,
                         ?parent:DisplayObjectContainer)
     {
-        super();
-
         this.displayObject = displayObject;
 
         if(parent == null) parent = flash.Lib.current.stage;

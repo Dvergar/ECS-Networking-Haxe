@@ -45,7 +45,7 @@ class EntityCreatorBase
     public var em:EntityManager;
     public var entities:Array<EntityTemplate> = new Array();
     public var entityIdByName:Map<String, Int> = new Map();
-    public var functionByEntityName:Map<String, Array<Int> -> Entity>;
+    public var functionByEntityName:Map<String, Dynamic -> Entity>;
     public var networkComponents:Array<Component> = new Array();
 
     public function serialize(componentType:Int, entity:Entity,
@@ -142,6 +142,7 @@ class System<ROOTTYPE, ECTYPE>
 class SystemManager<ROOTTYPE:{function init():Void;},
                     ECTYPE:{var em:EntityManager;}>
 {
+    var EM:EntityManager;
     var em:EntityManager;
     var ec:ECTYPE;
     var root:ROOTTYPE;  // ALLOWS ACCESS TO SYSTEM MANAGER
@@ -155,6 +156,7 @@ class SystemManager<ROOTTYPE:{function init():Void;},
     {
         this.root = root;
         this.em = new EntityManager();
+        EM = this.em;
         this.ec = Type.createInstance(entityCreatorType, []);
         this.ec.em = em;
 

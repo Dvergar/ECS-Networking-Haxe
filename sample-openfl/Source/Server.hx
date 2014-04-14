@@ -57,7 +57,7 @@ class Server extends SystemManager<Server, EntityCreator>
 
         var square = net.createNetworkEntity("square",
                                              null,
-                                             [100, 100],
+                                             {x:100, y:100},
                                              true);
         net.addComponent(square, new CPepito());
         net.setConnectionEntityFromTo(connectionEntity, square);

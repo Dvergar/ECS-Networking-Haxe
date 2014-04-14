@@ -63,15 +63,10 @@ class ClientManager
             if(msgType == CONST.CREATE_OWNED)
                 ownerId = input.readByte();
 
-            var argsLength = input.readByte();
-            var args:Array<Int> = [];
-            if(argsLength > 0)
-            {
-                for(i in 0...argsLength)
-                {
-                    args.push(input.readInt16());
-                }
-            }
+            // GET ENTITY ARGUMENTS
+            var args:Dynamic = haxe.Unserializer.run(input.readUTF());
+            if(args.entity != null)
+                args.entity = em.getEntityFromId(args.entity);
 
             // GET NETWORK DATAS
             var entityTypeId = input.readInt16();
@@ -95,7 +90,9 @@ class ClientManager
                 em.addComponent(entity, new CNetOwner(ownerId));
 
             if(event)
-                em.pushEvent(entityName.toUpperCase() + "_CREATE", entity, {ownerId:ownerId, x:args[0], y:args[1]});
+                em.pushEvent(entityName.toUpperCase() + "_CREATE",
+                             entity,
+                             {ownerId:ownerId, x:args.x, y:args.y});
 
             for(compId in netEntity.componentsIds)
             {

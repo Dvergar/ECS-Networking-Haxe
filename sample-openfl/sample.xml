@@ -6,7 +6,7 @@
     <source path="./../src" />
     <haxelib name="openfl" />
     <haxelib name="anette" />
+    <haxedef name="client" />
     <assets path="Assets" rename="assets" exclude="openfl.svg" />
     <icon path="Assets/openfl.svg" />
-    
 </project>

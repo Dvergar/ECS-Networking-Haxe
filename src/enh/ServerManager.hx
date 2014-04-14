@@ -130,14 +130,19 @@ class ServerManager
     // TODO : pass anonymous object
     public function createNetworkEntity(entityType:String,
                                         ?owner:Entity,
-                                        ?args:Array<Int>,
+                                        ?args:Dynamic,
                                         ?event:Bool):Entity
     {
-        if(args == null) args = new Array();
+        if(args == null) args = {};
 
+        // TRANSFORM LOCAL ID TO NETWORK ID
+        if(args.entity != null) args.entity = em.getIdFromEntity(args.entity);
+
+        // CREATE LOCAL ENTITY
         var entityTypeId = ec.entityIdByName[entityType];
         var entity = ec.functionByEntityName[entityType](args);
 
+        // CREATE NETWORK ENTITY
         var netEntity = new NetEntity();
         netEntity.entity = entity;
         netEntity.id = em.setId(entity);
@@ -148,6 +153,7 @@ class ServerManager
         netEntity.componentsIds = ec.entities[entityTypeId].componentsIds.copy();
         netEntity.syncComponentsIds = ec.entities[entityTypeId].syncComponentsIds.copy();
 
+        // SET ENTITY OWNER
         if(owner == null)
         {
             netEntity.owner = netEntity.entity;
@@ -162,9 +168,11 @@ class ServerManager
         netEntityByEntity.set(entity, netEntity);
         em.addComponent(entity, new CNetOwner(netEntity.ownerId));
 
+        // SEND NETWORK ENTITY
         for(conn in connectionsByEntity)
             sendCreate(netEntity, conn.anette.output);
 
+        // PUSH SYNCHRONIZED ENTITIES
         if(ec.entities[entityTypeId].sync == true) syncingEntities.push(netEntity);
 
         return entity;
@@ -184,11 +192,7 @@ class ServerManager
             output.writeByte(CONST.CREATE);
         }
 
-        output.writeByte(netEntity.args.length);
-        for(arg in netEntity.args)
-        {
-            output.writeInt16(arg);
-        }
+        output.writeUTF(haxe.Serializer.run(netEntity.args));
 
         output.writeInt16(netEntity.typeId);
         output.writeInt16(netEntity.id);
