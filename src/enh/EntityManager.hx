@@ -230,6 +230,15 @@ class EntityManager
         }
     }
 
+    public function hasEntity(entity:Entity)
+    {
+        for(componentStore in componentStores.iterator())
+            if(componentStore.exists(entity))
+                return true;
+
+        return false;
+    }
+
     public function processKills()
     {
         for(entity in killables.iterator())

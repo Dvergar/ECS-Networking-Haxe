@@ -231,7 +231,6 @@ class SystemManager<ROOTTYPE:{function init():Void;},
         this.oldNetTime = Timer.getTime();
         this.accumulator = 0;
         this.loopDatas = loopDatas;
-
         Loop.startLoop(step);
     }
     #end
@@ -243,6 +242,7 @@ class SystemManager<ROOTTYPE:{function init():Void;},
     public function startLoop(loopDatas:LoopDatas)
     {
         this.oldTime = Timer.getTime();
+        trace("oldtime " + oldTime);
         this.oldNetTime = Timer.getTime();
         this.accumulator = 0;
         this.loopDatas = loopDatas;

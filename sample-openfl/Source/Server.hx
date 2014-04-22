@@ -41,7 +41,6 @@ class Server extends SystemManager<Server, EntityCreator>
         @registerListener "HELLO";
 
         startLoop({loopFunction: loop, gameRate: 1/60, netRate: 1/20});
-
     }
 
     function onPing(entity:Entity, ev:Dynamic) {}
