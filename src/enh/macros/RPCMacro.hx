@@ -149,7 +149,7 @@ class RPCMacro
         var words = rpcName.split("_");
         var wordsUpperCaseFirst = Lambda.map(words, function(w) { return toUpperCaseFirst(w); } );
         var wordsJoined = wordsUpperCaseFirst.join("");
-        var functionName = wordsJoined.charAt(0).toLowerCase() + wordsJoined.substr(1);
+        var functionName = "_" + wordsJoined.charAt(0).toLowerCase() + wordsJoined.substr(1);
 
         return functionName;
     }
