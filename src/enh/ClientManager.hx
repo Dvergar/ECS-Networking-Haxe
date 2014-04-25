@@ -161,5 +161,15 @@ class ClientManager
         {
             unserializeRpc(input);
         }
+
+        if(msgType == CONST.CLIENT_DISCONNECTION)
+        {
+            trace("CLIENT_DISCONNECTION");
+
+            var entityId = input.readInt16();
+            var entity = em.getEntityFromId(entityId);
+
+            em.pushEvent("CLIENT_DISCONNECTION", entity, {});
+        }
     }
 }

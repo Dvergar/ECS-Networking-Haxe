@@ -68,6 +68,7 @@ class ServerManager
 
     public function connect(conn:Connection) {}
 
+    // CALLED BY USER
     public function disconnect(connectionEntity:Entity)
     {
         trace("sm disconnect");
@@ -80,6 +81,14 @@ class ServerManager
         trace("sm _disconnect");
         em.pushEvent("DISCONNECTION", conn.entity, {});
         var entity = conn.entity;  // ?
+        var netEntity = netEntityByEntity[entity];
+
+        for(otherNetEntity in netEntityByEntity.iterator())
+        {
+            var otherConn = connectionsByEntity[otherNetEntity.entity];
+            sendDisconnection(netEntity, otherConn.anette.output);
+        }
+
         connectionsByEntity.remove(entity);
         killEntityNow(entity);
     }
@@ -178,7 +187,7 @@ class ServerManager
         return entity;
     }
 
-    private function sendCreate(netEntity:NetEntity, output:BytesOutputEnhanced)
+    function sendCreate(netEntity:NetEntity, output:BytesOutputEnhanced)
     {
         trace("sendcreate " + netEntity.id);
 
@@ -202,6 +211,14 @@ class ServerManager
         {
             ec.serialize(compId, netEntity.entity, output);
         }
+    }
+
+    function sendDisconnection(netEntity:NetEntity, output:BytesOutputEnhanced)
+    {
+        trace("sendisconnection");
+
+        output.writeByte(CONST.CLIENT_DISCONNECTION);
+        output.writeInt16(netEntity.id);
     }
 
     public function updateNetworkEntity(entity:Entity)
