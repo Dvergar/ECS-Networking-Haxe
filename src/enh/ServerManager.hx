@@ -83,9 +83,10 @@ class ServerManager
         var entity = conn.entity;  // ?
         var netEntity = netEntityByEntity[entity];
 
-        for(otherNetEntity in netEntityByEntity.iterator())
+        for(otherConn in connectionsByEntity)
         {
-            var otherConn = connectionsByEntity[otherNetEntity.entity];
+            if(otherConn == conn) continue;
+
             sendDisconnection(netEntity, otherConn.anette.output);
         }
 
@@ -215,7 +216,7 @@ class ServerManager
 
     function sendDisconnection(netEntity:NetEntity, output:BytesOutputEnhanced)
     {
-        trace("sendisconnection");
+        trace("sendisconnection " + netEntity);
 
         output.writeByte(CONST.CLIENT_DISCONNECTION);
         output.writeInt16(netEntity.id);

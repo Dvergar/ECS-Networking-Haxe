@@ -33,7 +33,10 @@ class ServerSocket
 
     function onData(anconnection:anette.Connection)
     {
-        manager.processDatas(anconnection);
+        // trace("anconnection " + (anconnection.input.length - anconnection.input.position));
+        // while(anconnection.input.length - anconnection.input.position < 0)
+            manager.processDatas(anconnection);
+            // trace("anconnection2 " + (anconnection.input.length - anconnection.input.position));
     }
 
     function onConnection(anconnection:anette.Connection)
@@ -60,8 +63,12 @@ class ServerSocket
     {
         trace("disconnect " + conn.entity);
         connections.remove(anconn);
-        manager._disconnect(conn);
-        gameConnections.remove(anconn);
+        if(gameConnections.exists(anconn))
+        {
+            manager._disconnect(conn);
+            gameConnections.remove(anconn);
+        }
+        
         waitingSockets.remove(conn);
     }
 
