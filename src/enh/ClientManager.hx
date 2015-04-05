@@ -40,6 +40,11 @@ class ClientManager
         this.ec = ec;
     }
 
+    public function onDisconnection()
+    {
+        em.pushEvent("DISCONNECTION", me, {});
+    }
+
     public function processDatas(anconn:anette.Connection)
     {
         var input = anconn.input;

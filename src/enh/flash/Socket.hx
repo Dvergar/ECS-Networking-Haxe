@@ -42,6 +42,7 @@ class Socket
     {
         trace("disco");
         connected = false;
+        manager.onDisconnection();
     }
 
     public function connect(ip:String, port:Int)

@@ -80,9 +80,7 @@ class AddSystemMacro
     macro static public function replaceMetas():Array<Field>
     {
         var fields = Context.getBuildFields();
-
         _replaceMetas(fields);
-
         return fields;
     }
 }
