@@ -1,10 +1,9 @@
 ECS-Networking-Haxe
 ===================
 
-Entity Component System architecture with networking support, component state synchronization + RPC (kinda).
+_Check out [OSIS](https://github.com/Dvergar/OSIS) for a better architecture of this ECS._
 
-### Should I use this library ?
-Probably not, at this stage it's fine for protyping but I'm using macros and not enough error handling; if you go a bit out of the sample template you might trigger weird behaviours.
+Entity Component System architecture with networking support, component state synchronization + RPC (kinda).
 
 ### Goal
 Remove the hassle of serializing, unserializing and dispatching datas. Abstract most of the network code without killing the bandwidth. Having both abstraction and flexibility. Profiting of the ECS architecture to easily share and synchronize datas.
